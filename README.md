@@ -1,7 +1,7 @@
 # edensign-server
 Node.js APIs
 
-#Branching Strategy
+**Branching Strategy**
 
 **Naming**
 - There will be two different envs, dev and prod and their respective branches
