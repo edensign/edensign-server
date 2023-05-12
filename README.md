@@ -1,5 +1,9 @@
 # edensign-server
-Node.js APIs
+----------------------------------------------------------**Node.js APIs**----------------------------------------------------------
+**Start server**
+- npm install
+- npm start
+
 
 **Branching Strategy**
 
