@@ -14,7 +14,8 @@ const router = express.Router();
 
 
 //--------------------USER-----------------
-router.post('/register', verifyToken, userController.register);
+router.get('/get-users', userController.getUsers);       //verifyToken to be included
+router.post('/register', userController.register);      //verifyToken to be included
 router.post('/login', userController.login);
 router.get('/profile', verifyToken, userController.profile);
 router.patch('/update-user/:id', verifyToken, userController.updateUser);

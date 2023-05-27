@@ -12,6 +12,22 @@ const Sequelize = require("sequelize");
 
 
 const userController = {
+    /** */
+    getUsers: (req, res) => {
+        return new Promise((resolve, reject) => {
+            UserModel.findAll()
+                .then(list => {
+                    if(list.length > 0) {
+                        resolve(res.status(200).send(Utility.formatResponse(200, list)));
+                    } else {
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                    }
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
     /** Creating hash of password and a new user & assigning an Auth Token
     */
     register: (req, res) => {
@@ -64,8 +80,11 @@ const userController = {
         return new Promise((resolve, reject) => {
             UserModel.findByPk(req.body.userId, { attributes: { exclude: ['password'] } })
                 .then(user => {
-                    if (!user) resolve(res.status(404).send(Utility.formatResponse(404, `User Not Found`)));
-                    else resolve(res.status(200).send(Utility.formatResponse(200, user)));
+                    if (!user) {
+                        resolve(res.status(404).send(Utility.formatResponse(404, `User Not Found`)));
+                    } else {
+                        resolve(res.status(200).send(Utility.formatResponse(200, user)));
+                    };
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
