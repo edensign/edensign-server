@@ -96,7 +96,7 @@ const Utility = {
         return new Promise((resolve, reject) => {
             const token = req.headers['x-access-token'];
             if (!token) {
-                resolve(res.status(401).send(Utility.formatResponse(401,`No Token Provided`)));
+                resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
             }
             else {
                 jwt.verify(token, secret, (err, decoded) => {
@@ -109,7 +109,23 @@ const Utility = {
                 });
             };
         });
+    },
+    /**
+     * Get Schema Model according to tableName
+     * @param {string} tableName 
+     * @return {Object} Schema Model
+     */
+    getModel: (tableName) => {
+        let model;
+        switch (tableName) {
+            case 'users':
+                model = require("../model/user");
+                break;
+            default:
+                break;
+        };
+        return model;
     }
-}
+};
 
 module.exports = Utility;
