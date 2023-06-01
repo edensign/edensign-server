@@ -8,6 +8,7 @@
 
 const express = require("express");
 const userController = require("../../controller/user");
+const countryController = require("../../controller/country");
 const { verifyToken } = require("../../utility");
 
 const router = express.Router();
@@ -18,5 +19,12 @@ router.post('/register', verifyToken, userController.register);
 router.post('/login', userController.login);
 router.get('/profile', verifyToken, userController.profile);
 router.patch('/update-user/:id', verifyToken, userController.updateUser);
+
+
+//------------------COUNTRY-----------------
+router.post('/create-country', verifyToken, countryController.countryCreate);
+router.patch('/update-country/:id', verifyToken, countryController.updateCountry);
+router.delete('/delete-country/:id', verifyToken, countryController.removeCountry);
+
 
 module.exports = router;
