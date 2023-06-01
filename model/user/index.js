@@ -31,7 +31,7 @@ const UserModel = sequelize.define(
         },
         type: {
             type: Sequelize.ENUM,
-            values: ['admin', 'subadmin', 'salon', 'customer']
+            values: ['admin', 'salon', 'freelancer']
         },
         gender: {
             type: Sequelize.ENUM,

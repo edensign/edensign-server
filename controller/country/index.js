@@ -76,7 +76,6 @@ const countryController = {
             CountryModel.findByPk(req.params.id)
                 .then(country => {
                     if (country) {
-                        console.log("res value");
                         const removeUserObject = { ...country };
                         CountryModel.destroy({ where: { id: req.params.id } })
                             .then(deletedData => {
