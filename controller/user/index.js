@@ -6,8 +6,8 @@
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const Sequelize = require("sequelize");
 const { Op } = require("sequelize");
+const Sequelize = require("sequelize");
 
 const UserModel = require("../../model/user");
 const Utility = require("../../utility");
@@ -136,7 +136,6 @@ const userController = {
                         payload.password = hash;
                         UserModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
                             .then(updatedData => {
-                                console.log("With Password Updated!=>", updatedData)
                                 resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
                             })
                             .catch(err => {
@@ -146,7 +145,6 @@ const userController = {
             } else {
                 UserModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
                     .then(updatedData => {
-                        console.log("Without Password Updated!");
                         resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
                     })
                     .catch(err => {

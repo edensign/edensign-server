@@ -8,9 +8,9 @@
 
 const express = require("express");
 
-const userController = require("../../controller/user");
 const commonController = require("../../controller/common");
-const { verifyToken } = require("../../utility");
+const userController = require("../../controller/user");
+const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
 
@@ -24,5 +24,6 @@ router.patch('/update-user', verifyToken, userController.updateUser);
 
 // -----------------------------------Common-----------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
+router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(formatResponse(200, `Verified`)));
 
 module.exports = router;

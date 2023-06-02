@@ -6,14 +6,14 @@
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const express = require('express');
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const express = require('express');
 
 const config = require("./config");
 let { connectToMysql } = require("./db");
-const v1Routes = require("./v1/routes");
 const rateLimiter = require("./utility/rateLimiter")
+const v1Routes = require("./v1/routes");
 
 const app = express();
 

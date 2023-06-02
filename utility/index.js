@@ -114,7 +114,7 @@ const Utility = {
     },
     /**
      * Get Schema Model according to tableName
-     * @param {string} tableName 
+     * @param {String} tableName 
      * @return {Object} Schema Model
      */
     getModel: (tableName) => {
@@ -128,6 +128,12 @@ const Utility = {
         };
         return model;
     },
+        /**
+     * Get API limit and offset
+     * @param {Integer} page
+     * @param {Integer} size
+     * @return {Object} object containing limit and offset
+     */
     getPagination: (page = 0, size = 5) => {
         let limit = size;
         let offset = page * size;
