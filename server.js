@@ -9,9 +9,11 @@
 const express = require('express');
 const bodyParser = require("body-parser");
 const cors = require("cors");
+
 const config = require("./config");
-const v1Routes = require("./v1/routes");
 let { connectToMysql } = require("./db");
+const v1Routes = require("./v1/routes");
+const rateLimiter = require("./utility/rateLimiter")
 
 const app = express();
 
@@ -24,6 +26,7 @@ const corsOptions = {
     optionSuccessStatus: 200
 }
 app.use(cors(corsOptions));
+app.use(rateLimiter);
 
 app.use('/api/v1', v1Routes);
 

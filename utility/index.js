@@ -8,6 +8,7 @@
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const config = require("../config");
 
 const salt = config.SALT;
@@ -72,6 +73,7 @@ const Utility = {
             case 404:
             case 408:
             case 409:
+            case 429:
             case 500:
             case 502:
             case 503:
@@ -125,6 +127,11 @@ const Utility = {
                 break;
         };
         return model;
+    },
+    getPagination: (page = 0, size = 5) => {
+        let limit = size;
+        let offset = page * size;
+        return { limit, offset }
     }
 };
 

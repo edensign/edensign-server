@@ -7,6 +7,7 @@
  */
 
 const Sequelize = require("sequelize");
+
 const sequelize = require("../../sequelize");
 
 const UserModel = sequelize.define(

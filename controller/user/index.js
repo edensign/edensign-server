@@ -6,23 +6,52 @@
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const UserModel = require("../../model/user");
-const Utility = require("../../utility/index");
 const Sequelize = require("sequelize");
+const { Op } = require("sequelize");
+
+const UserModel = require("../../model/user");
+const Utility = require("../../utility");
 
 const userController = {
-    /** Get users from database based on query type
+    /** Get users from database based on query type, page, size and search if provided
      */
     getUsers: (req, res) => {
+        const { page, size, search } = req.query;
+        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
         let cond = null;
+
         if (req.query.type) {
             cond = req.query.type.split(',');
         }
         return new Promise((resolve, reject) => {
-            UserModel.findAll({ where: { type: cond } })
+            let searchCond = {
+                type: cond
+            };
+            if (search) {
+                searchCond = {
+                    ...searchCond,
+                    [Op.or]: [
+                        {
+                            username: {
+                                [Op.like]: `%${search}%`
+                            }
+                        },
+                        {
+                            email: {
+                                [Op.like]: `%${search}%`
+                            }
+                        }
+                    ]
+                };
+            }
+            UserModel.findAndCountAll({
+                limit, offset, where: { ...searchCond }
+            })
                 .then(list => {
-                    if (list.length > 0) {
-                        resolve(res.status(200).send(Utility.formatResponse(200, list)));
+                    const { count, rows } = list;
+
+                    if (count > 0) {
+                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })));
                     } else {
                         resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
                     }
@@ -30,6 +59,7 @@ const userController = {
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
+
         });
     },
     /** Creating hash of password and a new user & assigning an Auth Token
@@ -60,14 +90,14 @@ const userController = {
     login: (req, res) => {
         return new Promise((resolve, reject) => {
             UserModel.findOne({
-                where: { email: req.body.email }
+                where: { email: req.body.email, status: "active" }
             }).then((user) => {
                 if (user) {
                     Utility.comparePassword(req.body.password, user.password)
                         .then((isMatch) => {
                             if (isMatch) {
                                 const token = Utility.getSignedToken(user.id);
-                                resolve(res.status(200).send(Utility.formatResponse(200, { token })));
+                                resolve(res.status(200).send(Utility.formatResponse(200, { token, username: user.username })));
                             } else {
                                 resolve(res.status(200).send(Utility.formatResponse(200, `Username and Password do not match`)));
                             };
@@ -106,7 +136,7 @@ const userController = {
                         payload.password = hash;
                         UserModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
                             .then(updatedData => {
-                                console.log("With Password Updated!")
+                                console.log("With Password Updated!=>", updatedData)
                                 resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
                             })
                             .catch(err => {
@@ -126,42 +156,5 @@ const userController = {
         })
     }
 };
-// return new Promise((resolve, reject) => {
-//     console.log('req.body.id=>', req.body.id);
 
-//     UserModel.findOne({ where: { id: req.body.id } })
-//         .then(user => {
-//             console.log('username', user.username);
-//             if (user) {
-//                 // const userOldData = {
-//                 //     username: user.username,
-
-//                 // }
-//                 const payload = req.body;
-//                 if (payload.password) {
-//                     Utility.createHash(payload.password)
-//                         .then((hash) => {
-//                             payload.password = hash;
-//                             console.log('payload=>', payload);
-//                             const updatedUserObject = { ...user, ...payload };
-//                             console.log({ updatedUserObject });
-//                             UserModel.update({ ...updatedUserObject, updated_by: req.body.userId }, { where: { id: req.params.id } })
-//                                 .then(updatedData => {
-//                                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-//                                 })
-//                                 .catch(err => {
-//                                     reject(res.status(500).send(Utility.formatResponse(500, err)));
-//                                 });
-//                         } else {
-//                     resolve(res.status(404).send(Utility.formatResponse(404, `User Not Found`)));
-//                 };
-//                         )}
-//             }
-//         }
-//         })
-//     .catch(err => {
-//         reject(res.status(500).send(Utility.formatResponse(500, err)));
-//     });
-// });
-// }
 module.exports = userController;
