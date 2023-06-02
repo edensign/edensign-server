@@ -14,9 +14,9 @@ const commonController = {
     getByPk: (req, res) => {
         const Model = Utility.getModel(req.params.table);
         let exclude = {};
-        // if (req.params.table === 'users') {
-        //     exclude = { exclude: ['password'] };
-        // }
+        if (req.params.table === 'users') {
+            exclude = { exclude: ['password'] };
+        }
         return new Promise((resolve, reject) => {
             Model.findByPk(req.params.id, { attributes: exclude })
                 .then(data => {
