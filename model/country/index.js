@@ -7,30 +7,31 @@
  */
 
 const Sequelize = require("sequelize");
+
 const sequelize = require("../../sequelize");
 
 const CountryModel = sequelize.define(
-    'country',        //table name
-    {
-        name: {
-            type: Sequelize.STRING,
-            allowNull: false,
-            unique: true
-        },
-        country_code: {
-            type: Sequelize.STRING,
-            allowNull: false,
-            unique: true
-        },
-        phone_code: {
-            type: Sequelize.STRING,
-            allowNull: false
-        },
+  "country", //table name
+  {
+    name: {
+      type: Sequelize.STRING,
+      allowNull: false,
+      unique: true,
     },
-    {
-        timestamps: false,
-        freezeTableName: true
-    }
+    country_code: {
+      type: Sequelize.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    phone_code: {
+      type: Sequelize.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    timestamps: false,
+    freezeTableName: true,
+  }
 );
 
 module.exports = CountryModel;

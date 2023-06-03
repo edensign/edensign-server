@@ -7,13 +7,13 @@
  */
 
 const express = require("express");
+
 const userController = require("../../controller/user");
 const commonController = require("../../controller/common");
 const countryController = require("../../controller/country");
 const { verifyToken } = require("../../utility");
 
 const router = express.Router();
-
 
 //--------------------USER-----------------
 router.get('/get-users', userController.getUsers);       //verifyToken to be included
@@ -24,7 +24,6 @@ router.patch('/update-user', userController.updateUser); // verify token to be a
 
 // -----------------------------------Common-----------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
-
 
 //------------------COUNTRY-----------------
 router.post('/create-country', verifyToken, countryController.countryCreate);
