@@ -8,22 +8,23 @@
 
 const express = require("express");
 
-const userController = require("../../controller/user");
 const commonController = require("../../controller/common");
 const countryController = require("../../controller/country");
-const { verifyToken } = require("../../utility");
+const userController = require("../../controller/user");
+const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
 
 //--------------------USER-----------------
-router.get('/get-users', userController.getUsers);       //verifyToken to be included
-router.post('/register', userController.register);      //verifyToken to be included
+router.get('/get-users', verifyToken, userController.getUsers);
+router.post('/register', verifyToken, userController.register);
 router.post('/login', userController.login);
 router.get('/profile', verifyToken, userController.profile);
-router.patch('/update-user', userController.updateUser); // verify token to be added
+router.patch('/update-user', verifyToken, userController.updateUser);
 
 // -----------------------------------Common-----------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
+router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(formatResponse(200, `Verified`)));
 
 //------------------COUNTRY-----------------
 router.post('/create-country', verifyToken, countryController.countryCreate);
