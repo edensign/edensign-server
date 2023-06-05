@@ -139,6 +139,7 @@ const Utility = {
         let offset = page * size;
         return { limit, offset }
     }
+
 };
 
 module.exports = Utility;
