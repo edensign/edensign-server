@@ -11,6 +11,7 @@ const Sequelize = require("sequelize");
 
 const UserModel = require("../../model/user");
 const Utility = require("../../utility");
+const addressController = require("../address");
 
 const userController = {
     /** Get users from database based on query type, page, size and search if provided
@@ -45,7 +46,9 @@ const userController = {
                 };
             }
             UserModel.findAndCountAll({
-                limit, offset, where: { ...searchCond }
+                limit, offset, where: { ...searchCond }, order: [
+                    ["updated_at", "DESC"]
+                ]
             })
                 .then(list => {
                     const { count, rows } = list;
@@ -67,17 +70,18 @@ const userController = {
     register: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;
+            console.log('USER=>', payload);
             Utility.createHash(payload.password)
                 .then((hash) => {
                     payload.password = hash;
                     UserModel.create({ ...payload, created_by: req.body.userId })
                         .then((user) => {
                             const token = Utility.getSignedToken(user.id);
-                            resolve(res.status(200).send(Utility.formatResponse(200, { token })));
+                            resolve(res.status(200).send(Utility.formatResponse(200, { token, id: user.id })));
                         })
-                        .catch((Sequelize.UniqueConstraintError, err => {
+                        .catch(err => {
                             resolve(res.status(409).send(Utility.formatResponse(409, `${err.errors[0].message}`)));
-                        }));
+                        });
                 })
                 .catch(err => {
                     reject(err);
