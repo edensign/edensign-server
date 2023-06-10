@@ -12,22 +12,41 @@ const StateModel = require("../../model/state");
 const Utility = require("../../utility/index");
 
 const stateController = {
+  /** Get states from database based on query type search if provided
+   */
+  getStates: (req, res) => {
+    let cond = null;
+    if (req.query.type) {
+      cond = req.query.type.split(",");
+    }
+    return new Promise((resolve, reject) => {
+      StateModel.findAll({ where: { ...cond } })
+        .then((list) => {
+          if (list.length > 0) {
+            resolve(
+              res.status(200).send(Utility.formatResponse(200, { list }))
+            );
+          } else {
+            resolve(
+              res.status(404).send(Utility.formatResponse(404, `No Data Found`))
+            );
+          }
+        })
+        .catch((err) => {
+          reject(res.status(500).send(Utility.formatResponse(500, err)));
+        });
+    });
+  },
   /** Creating a new state record in the database.*/
-  stateCreate: (req, res) => {
+  createState: (req, res) => {
     return new Promise((resolve, reject) => {
       const payload = req.body;
       StateModel.create({ ...payload, created_by: req.body.id })
         .then((state) => {
-          resolve(
-            res.status(200).send(Utility.formatResponse(200, { state }))
-          );
+          resolve(res.status(200).send(Utility.formatResponse(200, { state })));
         })
         .catch((err) => {
-          resolve(
-            res
-              .status(409)
-              .send(Utility.formatResponse(409, `${err}`))
-          );
+          resolve(res.status(409).send(Utility.formatResponse(409, `${err}`)));
         });
     });
   },

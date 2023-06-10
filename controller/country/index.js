@@ -12,8 +12,33 @@ const CountryModel = require("../../model/country");
 const Utility = require("../../utility/index");
 
 const countryController = {
+  /** Get countries from database based on query type search if provided
+   */
+  getCountries: (req, res) => {
+    let cond = null;
+    if (req.query.type) {
+      cond = req.query.type.split(",");
+    }
+    return new Promise((resolve, reject) => {
+      CountryModel.findAll({ where: { ...cond } })
+        .then((list) => {
+          if (list.length > 0) {
+            resolve(
+              res.status(200).send(Utility.formatResponse(200, { list }))
+            );
+          } else {
+            resolve(
+              res.status(404).send(Utility.formatResponse(404, `No Data Found`))
+            );
+          }
+        })
+        .catch((err) => {
+          reject(res.status(500).send(Utility.formatResponse(500, err)));
+        });
+    });
+  },
   /** Creating a new country record in the database.*/
-  countryCreate: (req, res) => {
+  createCountry: (req, res) => {
     return new Promise((resolve, reject) => {
       const payload = req.body;
       CountryModel.create({ ...payload, created_by: req.body.id })

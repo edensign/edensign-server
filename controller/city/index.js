@@ -12,15 +12,38 @@ const CityModel = require("../../model/city");
 const Utility = require("../../utility/index");
 
 const cityController = {
+  /** Get cities from database based on query type search if provided
+   */
+  getCities: (req, res) => {
+    let cond = null;
+    if (req.query.type) {
+      cond = req.query.type.split(",");
+    }
+    return new Promise((resolve, reject) => {
+      CityModel.findAll({ where: { ...cond } })
+        .then((list) => {
+          if (list.length > 0) {
+            resolve(
+              res.status(200).send(Utility.formatResponse(200, { list }))
+            );
+          } else {
+            resolve(
+              res.status(404).send(Utility.formatResponse(404, `No Data Found`))
+            );
+          }
+        })
+        .catch((err) => {
+          reject(res.status(500).send(Utility.formatResponse(500, err)));
+        });
+    });
+  },
   /** Creating a new city record in the database.*/
-  cityCreate: (req, res) => {
+  createCity: (req, res) => {
     return new Promise((resolve, reject) => {
       const payload = req.body;
       CityModel.create({ ...payload, created_by: req.body.id })
         .then((city) => {
-          resolve(
-            res.status(200).send(Utility.formatResponse(200, { city }))
-          );
+          resolve(res.status(200).send(Utility.formatResponse(200, { city })));
         })
         .catch((err) => {
           resolve(
