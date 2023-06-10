@@ -15,12 +15,9 @@ const stateController = {
   /** Get states from database based on query type search if provided
    */
   getStates: (req, res) => {
-    let cond = null;
-    if (req.query.type) {
-      cond = req.query.type.split(",");
-    }
+    let cond = req.body.id ? req.body.id : null;
     return new Promise((resolve, reject) => {
-      StateModel.findAll({ where: { ...cond } })
+      StateModel.findAll(cond !== null ? { where: { id: cond } } : {})
         .then((list) => {
           if (list.length > 0) {
             resolve(

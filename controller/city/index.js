@@ -15,12 +15,9 @@ const cityController = {
   /** Get cities from database based on query type search if provided
    */
   getCities: (req, res) => {
-    let cond = null;
-    if (req.query.type) {
-      cond = req.query.type.split(",");
-    }
+    let cond = req.body.id ? req.body.id : null;
     return new Promise((resolve, reject) => {
-      CityModel.findAll({ where: { ...cond } })
+      CityModel.findAll(cond !== null ? { where: { id: cond } } : {})
         .then((list) => {
           if (list.length > 0) {
             resolve(
