@@ -6,16 +6,16 @@
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const AddressModel = require("../../model/address");
+const ImageModel = require("../../model/image");
 const Utility = require("../../utility");
 
-const addressController = {
+const ImageController = {
     /** */
     create: (req, res) => {
         const payload = req.body;
         return new Promise((resolve, reject) => {
-            AddressModel.create({ ...payload })
-                .then(address => {
+            ImageModel.create({ ...payload })
+                .then(image => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Success`)));
                 })
                 .catch(err => {
@@ -23,41 +23,39 @@ const addressController = {
                 });
         });
     },
-    /** Get user address from database
+    /** Get Image from database
      */
-    getAddress: (req, res) => {
+    getImage: (req, res) => {
         return new Promise((resolve, reject) => {
-            AddressModel.findOne({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
+            ImageModel.findOne({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
                 .then(data => {
-                    console.log("WHAT HAPPENED WHEN GET DATA", data);
+                    console.log("GETIMAGE THEN LOG OD DATA=>", data)
                     !data ?
                         resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
                         :
                         resolve(res.status(200).send(Utility.formatResponse(200, data)));
                 })
                 .catch(err => {
-                    console.log("WHAT HAPPENED WHEN CATCH DATA", err)
+                    console.log("GETIMAGE CATCH LOG OD DATA=>", err)
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     },
-    /** Updating address of a particular user in the database
+    /** Updating Image of a particular user in the database
      */
-    updateAddress: (req, res) => {
+    updateImage: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;
-            AddressModel.update({ ...payload, updated_by: req.body.userId },
+            ImageModel.update({ ...payload, updated_by: req.body.userId },
                 { where: { parent: req.body.parent, parent_id: req.body.parent_id } })
                 .then(updatedData => {
-                    console.log("WHAT HAPPENED WHEN UPDATE")
                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
                 })
                 .catch(err => {
-                    console.log("CATCH BLOCK OF UPDATE")
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     }
 };
 
-module.exports = addressController;
+module.exports = ImageController;

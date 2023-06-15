@@ -123,6 +123,9 @@ const Utility = {
             case 'users':
                 model = require("../model/user");
                 break;
+            case 'salon':
+                model = require("../model/salon");
+                break;
             default:
                 break;
         };
