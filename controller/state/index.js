@@ -8,16 +8,16 @@
 
 const Sequelize = require("sequelize");
 
-const CountryModel = require("../../model/country");
+const StateModel = require("../../model/state");
 const Utility = require("../../utility/index");
 
-const countryController = {
-  /** Get countries from database based on query type search if provided
+const stateController = {
+  /** Get states from database based on query type search if provided
    */
-  getCountries: (req, res) => {
+  getStates: (req, res) => {
     let cond = req.body.id ? req.body.id : null;
     return new Promise((resolve, reject) => {
-      CountryModel.findAll(cond !== null ? { where: { id: cond } } : {})
+      StateModel.findAll(cond !== null ? { where: { id: cond } } : {})
         .then((list) => {
           if (list.length > 0) {
             resolve(
@@ -34,35 +34,29 @@ const countryController = {
         });
     });
   },
-  /** Creating a new country record in the database.*/
-  createCountry: (req, res) => {
+  /** Creating a new state record in the database.*/
+  createState: (req, res) => {
     return new Promise((resolve, reject) => {
       const payload = req.body;
-      CountryModel.create({ ...payload, created_by: req.body.id })
-        .then((country) => {
-          resolve(
-            res.status(200).send(Utility.formatResponse(200, { country }))
-          );
+      StateModel.create({ ...payload, created_by: req.body.id })
+        .then((state) => {
+          resolve(res.status(200).send(Utility.formatResponse(200, { state })));
         })
         .catch((err) => {
-          resolve(
-            res
-              .status(409)
-              .send(Utility.formatResponse(409, `${err.errors[0].message}`))
-          );
+          resolve(res.status(409).send(Utility.formatResponse(409, `${err}`)));
         });
     });
   },
 
-  /** Finding country in database, if found then updating it with newly entered data.*/
-  updateCountry: (req, res) => {
+  /** Finding state in database, if found then updating it with newly entered data.*/
+  updateState: (req, res) => {
     return new Promise((resolve, reject) => {
-      CountryModel.findByPk(req.params.id)
-        .then((country) => {
-          if (country) {
-            const updatedCountryObject = { ...country, ...req.body };
-            CountryModel.update(
-              { ...updatedCountryObject },
+      StateModel.findByPk(req.params.id)
+        .then((state) => {
+          if (state) {
+            const updatedStateObject = { ...state, ...req.body };
+            StateModel.update(
+              { ...updatedStateObject },
               { where: { id: req.params.id } }
             )
               .then((updatedData) => {
@@ -79,7 +73,7 @@ const countryController = {
             resolve(
               res
                 .status(404)
-                .send(Utility.formatResponse(404, `Country Not Found`))
+                .send(Utility.formatResponse(404, `State Not Found`))
             );
           }
         })
@@ -89,13 +83,13 @@ const countryController = {
     });
   },
 
-  /** Finding the matched id record of country in database, if found then deleting the particular record.*/
-  removeCountry: (req, res) => {
+  /** Finding the matched id record of state in database, if found then deleting the particular record.*/
+  removeState: (req, res) => {
     return new Promise((resolve, reject) => {
-      CountryModel.findByPk(req.params.id)
-        .then((country) => {
-          if (country) {
-            CountryModel.destroy({ where: { id: req.params.id } })
+      StateModel.findByPk(req.params.id)
+        .then((state) => {
+          if (state) {
+            StateModel.destroy({ where: { id: req.params.id } })
               .then((deletedData) => {
                 resolve(
                   res
@@ -110,7 +104,7 @@ const countryController = {
             resolve(
               res
                 .status(404)
-                .send(Utility.formatResponse(404, `Country Not Found`))
+                .send(Utility.formatResponse(404, `State Not Found`))
             );
           }
         })
@@ -121,4 +115,4 @@ const countryController = {
   },
 };
 
-module.exports = countryController;
+module.exports = stateController;

@@ -14,6 +14,8 @@ const countryController = require("../../controller/country");
 const imageController = require("../../controller/image");
 const salonController = require("../../controller/salon");
 const userController = require("../../controller/user");
+const stateController = require("../../controller/state");
+const cityController = require("../../controller/city");
 const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
@@ -22,11 +24,6 @@ const router = express.Router();
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);
 router.post('/create-address', verifyToken, addressController.create);
 router.patch('/update-address', verifyToken, addressController.updateAddress);
-
-//-------------------------------COUNTRY----------------------------------
-router.post('/create-country', verifyToken, countryController.create);
-router.patch('/update-country/:id', verifyToken, countryController.updateCountry);
-router.delete('/delete-country/:id', verifyToken, countryController.removeCountry);
 
 // ------------------------------Common------------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
@@ -48,5 +45,23 @@ router.post('/register', verifyToken, userController.register);
 router.post('/login', userController.login);
 router.get('/profile', verifyToken, userController.profile);
 router.patch('/update-user', verifyToken, userController.updateUser);
+
+//------------------COUNTRY-----------------
+router.get('/get-country', verifyToken, countryController.getCountries);
+router.post('/create-country', verifyToken, countryController.createCountry);
+router.patch('/update-country/:id', verifyToken, countryController.updateCountry);
+router.delete('/delete-country/:id', verifyToken, countryController.removeCountry);
+
+//------------------STATE-----------------
+router.get('/get-state', verifyToken, stateController.getStates);
+router.post('/create-state', verifyToken, stateController.createState);
+router.patch('/update-state/:id', verifyToken, stateController.updateState);
+router.delete('/delete-state/:id', verifyToken, stateController.removeState);
+
+//------------------CITY------------------
+router.get('/get-city', verifyToken, cityController.getCities);
+router.post('/create-city', verifyToken, cityController.createCity);
+router.patch('/update-city/:id', verifyToken, cityController.updateCity);
+router.delete('/delete-city/:id', verifyToken, cityController.removeCity);
 
 module.exports = router;
