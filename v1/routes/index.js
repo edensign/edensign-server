@@ -11,6 +11,8 @@ const express = require("express");
 const addressController = require("../../controller/address");
 const commonController = require("../../controller/common");
 const countryController = require("../../controller/country");
+const imageController = require("../../controller/image");
+const salonController = require("../../controller/salon");
 const userController = require("../../controller/user");
 const stateController = require("../../controller/state");
 const cityController = require("../../controller/city");
@@ -18,16 +20,26 @@ const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
 
-//-------------------------------ADDRESS-------------------------------------
+//-------------------------------ADDRESS----------------------------------
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);
 router.post('/create-address', verifyToken, addressController.create);
 router.patch('/update-address', verifyToken, addressController.updateAddress);
 
-// ------------------------------Common-----------------------------------
+// ------------------------------Common------------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
 router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(formatResponse(200, `Verified`)));
 
-//--------------------USER-----------------
+//-------------------------------IMAGE-----------------------------------
+router.get('/get-image/:parent/:parent_id', verifyToken, imageController.getImage);
+router.post('/create-image', verifyToken, imageController.create);
+router.patch('/update-image', verifyToken, imageController.updateImage);
+
+//-------------------------------SALON--------------------------------------
+router.get('/get-salons', verifyToken, salonController.getSalons);
+router.post('/create-salon', verifyToken, salonController.createSalon);
+router.patch('/update-salon', verifyToken, salonController.updateSalon);
+
+//-------------------------------USER---------------------------------------
 router.get('/get-users', verifyToken, userController.getUsers);
 router.post('/register', verifyToken, userController.register);
 router.post('/login', userController.login);

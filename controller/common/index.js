@@ -17,6 +17,7 @@ const commonController = {
         return new Promise((resolve, reject) => {
             Model.findByPk(req.params.id, { attributes: exclude })
                 .then(data => {
+                    console.log("Daata=>", data)
                     if (!data) {
                         resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)));
                     } else {
@@ -25,6 +26,7 @@ const commonController = {
                     };
                 })
                 .catch(err => {
+                    console.log('SALON CATCH=>', err);
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });

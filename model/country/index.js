@@ -27,6 +27,18 @@ const CountryModel = sequelize.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
+    created_at: {
+      type: Sequelize.DATE
+    },
+    updated_at: {
+      type: Sequelize.DATE
+    },
+    created_by: {
+      type: Sequelize.INTEGER
+    },
+    updated_by: {
+      type: Sequelize.INTEGER
+    }
   },
   {
     timestamps: false,
