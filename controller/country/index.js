@@ -15,9 +15,8 @@ const countryController = {
   /** Get countries from database based on query type search if provided
    */
   getCountries: (req, res) => {
-    let cond = req.body.id ? req.body.id : null;
     return new Promise((resolve, reject) => {
-      CountryModel.findAll(cond !== null ? { where: { id: cond } } : {})
+      CountryModel.findAll()
         .then((list) => {
           if (list.length > 0) {
             resolve(

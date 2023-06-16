@@ -15,10 +15,11 @@ const stateController = {
   /** Get states from database based on query type search if provided
    */
   getStates: (req, res) => {
-    let cond = req.body.id ? req.body.id : null;
     return new Promise((resolve, reject) => {
-      StateModel.findAll(cond !== null ? { where: { id: cond } } : {})
-        .then((list) => {
+      console.log("REQUEST=>", req.params);
+
+      StateModel.findAll({ where: { country_id: req.params.id } })
+        .then(list => {
           if (list.length > 0) {
             resolve(
               res.status(200).send(Utility.formatResponse(200, { list }))

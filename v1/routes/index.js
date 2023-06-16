@@ -41,13 +41,13 @@ router.patch('/update-country/:id', verifyToken, countryController.updateCountry
 router.delete('/delete-country/:id', verifyToken, countryController.removeCountry);
 
 //------------------STATE-----------------
-router.get('/get-state', verifyToken, stateController.getStates);
+router.get('/get-state/:id', verifyToken, stateController.getStates);
 router.post('/create-state', verifyToken, stateController.createState);
 router.patch('/update-state/:id', verifyToken, stateController.updateState);
 router.delete('/delete-state/:id', verifyToken, stateController.removeState);
 
 //------------------CITY------------------
-router.get('/get-city', verifyToken, cityController.getCities);
+router.get('/get-city/:id', verifyToken, cityController.getCities);
 router.post('/create-city', verifyToken, cityController.createCity);
 router.patch('/update-city/:id', verifyToken, cityController.updateCity);
 router.delete('/delete-city/:id', verifyToken, cityController.removeCity);
