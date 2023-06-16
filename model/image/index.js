@@ -10,8 +10,8 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../../sequelize");
 
-const AddressModel = sequelize.define(
-    'address',        //table name
+const ImageModel = sequelize.define(
+    "images",     //table name
     {
         parent: {
             type: Sequelize.ENUM,
@@ -20,30 +20,12 @@ const AddressModel = sequelize.define(
         parent_id: {
             type: Sequelize.INTEGER
         },
-        street: {
-            type: Sequelize.STRING,
-            allowNull: false
+        type: {
+            type: Sequelize.ENUM,
+            values: ['normal', 'banner']
         },
-        landmark: {
+        image_src: {
             type: Sequelize.STRING
-        },
-        zipcode: {
-            type: Sequelize.STRING
-        },
-        latitude: {
-            type: Sequelize.STRING
-        },
-        longitude: {
-            type: Sequelize.STRING
-        },
-        city: {
-            type: Sequelize.INTEGER
-        },
-        state: {
-            type: Sequelize.INTEGER
-        },
-        country: {
-            type: Sequelize.INTEGER
         },
         created_at: {
             type: Sequelize.DATE
@@ -60,8 +42,8 @@ const AddressModel = sequelize.define(
     },
     {
         timestamps: false,
-        freezeTableName: true
+        freezeTableName: true,
     }
 );
 
-module.exports = AddressModel;
+module.exports = ImageModel;
