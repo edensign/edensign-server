@@ -11,7 +11,7 @@ const Sequelize = require("sequelize");
 const sequelize = require("../../sequelize");
 
 const StateModel = sequelize.define(
-  "state", //table name
+  "state",    //table name
   {
     name: {
       type: Sequelize.STRING,

@@ -16,21 +16,15 @@ const stateController = {
    */
   getStates: (req, res) => {
     return new Promise((resolve, reject) => {
-      console.log("REQUEST=>", req.params);
 
       StateModel.findAll({ where: { country_id: req.params.id } })
         .then(list => {
-          if (list.length > 0) {
-            resolve(
-              res.status(200).send(Utility.formatResponse(200, { list }))
-            );
-          } else {
-            resolve(
-              res.status(404).send(Utility.formatResponse(404, `No Data Found`))
-            );
-          }
+          (list.length > 0) ?
+            resolve(res.status(200).send(Utility.formatResponse(200, { list })))
+            :
+            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
         })
-        .catch((err) => {
+        .catch(err => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
         });
     });

@@ -61,15 +61,13 @@ const salonController = {
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
-
         });
     },
-    /** Creating a new salon     * multipleAPI calls in front end
+    /** Creating salon in the database
     */
     createSalon: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;
-            console.log("Payload=>", payload)
             SalonModel.create({ ...payload, created_by: req.body.userId })
                 .then(salon => {
                     resolve(res.status(200).send(Utility.formatResponse(200, { id: salon.id })));
@@ -79,12 +77,11 @@ const salonController = {
                 });     //`${err.errors[0].message}`  this was added when it was sequelize constraint error
         });
     },
-    /** Updating Salon in database
+    /** Updating Salon in the database
      */
     updateSalon: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;
-            console.log("Payload=>", payload)
             SalonModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
                 .then(updatedData => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));

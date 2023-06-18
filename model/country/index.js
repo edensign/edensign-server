@@ -11,7 +11,7 @@ const Sequelize = require("sequelize");
 const sequelize = require("../../sequelize");
 
 const CountryModel = sequelize.define(
-  "country", //table name
+  "country",    //table name
   {
     name: {
       type: Sequelize.STRING,
@@ -26,18 +26,6 @@ const CountryModel = sequelize.define(
     phone_code: {
       type: Sequelize.STRING,
       allowNull: false,
-    },
-    created_at: {
-      type: Sequelize.DATE
-    },
-    updated_at: {
-      type: Sequelize.DATE
-    },
-    created_by: {
-      type: Sequelize.INTEGER
-    },
-    updated_by: {
-      type: Sequelize.INTEGER
     }
   },
   {

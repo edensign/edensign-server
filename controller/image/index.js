@@ -10,7 +10,24 @@ const ImageModel = require("../../model/image");
 const Utility = require("../../utility");
 
 const ImageController = {
-    /** */
+    /** Get image/images from database based on parent
+     */
+    getImage: (req, res) => {
+        return new Promise((resolve, reject) => {
+            ImageModel.findAll({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
+                .then(data => {
+                    !data ?
+                        resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
+                        :
+                        resolve(res.status(200).send(Utility.formatResponse(200, data)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Create new image
+     */
     create: (req, res) => {
         const payload = req.body;
         return new Promise((resolve, reject) => {
@@ -23,25 +40,7 @@ const ImageController = {
                 });
         });
     },
-    /** Get Image from database
-     */
-    getImage: (req, res) => {
-        return new Promise((resolve, reject) => {
-            ImageModel.findOne({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
-                .then(data => {
-                    console.log("GETIMAGE THEN LOG OD DATA=>", data)
-                    !data ?
-                        resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
-                        :
-                        resolve(res.status(200).send(Utility.formatResponse(200, data)));
-                })
-                .catch(err => {
-                    console.log("GETIMAGE CATCH LOG OD DATA=>", err)
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
-    },
-    /** Updating Image of a particular user in the database
+    /** Updating image in the database based on parent
      */
     updateImage: (req, res) => {
         return new Promise((resolve, reject) => {

@@ -9,7 +9,7 @@
 const Utility = require("../../utility");
 
 const commonController = {
-    /** Get user information of specified table from database
+    /** Find user of specified model from the database
      */
     getByPk: (req, res) => {
         const Model = Utility.getModel(req.params.table);
@@ -17,20 +17,16 @@ const commonController = {
         return new Promise((resolve, reject) => {
             Model.findByPk(req.params.id, { attributes: exclude })
                 .then(data => {
-                    console.log("Daata=>", data)
-                    if (!data) {
-                        resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)));
-                    } else {
-
+                    !data ?
+                        resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
+                        :
                         resolve(res.status(200).send(Utility.formatResponse(200, data)));
-                    };
                 })
                 .catch(err => {
-                    console.log('SALON CATCH=>', err);
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
-    },
+    }
 }
 
 module.exports = commonController;

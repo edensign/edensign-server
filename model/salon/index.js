@@ -11,7 +11,7 @@ const Sequelize = require("sequelize");
 const sequelize = require("../../sequelize");
 
 const SalonModel = sequelize.define(
-    'salon',        //table name
+    'salon',     //table name
     {
         name: {
             type: Sequelize.STRING,

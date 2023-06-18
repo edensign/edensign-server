@@ -10,6 +10,7 @@ const rateLimit = require('express-rate-limit');
 
 const Utility = require("./index");
 
+//control the rate at which users can send requests to the server
 const rateLimiter = rateLimit({
   windowMs: 60 * 1000,     // 1 minute in milliseconds
   max: 120,

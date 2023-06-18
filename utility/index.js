@@ -24,8 +24,7 @@ const Utility = {
     createHash: password => {
         return new Promise((resolve, reject) => {
             bcrypt.hash(password, salt, (err, hash) => {
-                if (err) reject(err);
-                else resolve(hash);
+                err ? reject(err) : resolve(hash);
             });
         });
     },
@@ -36,7 +35,7 @@ const Utility = {
      */
     getSignedToken: id => {
         return jwt.sign({ id: id }, secret, {
-            expiresIn: 86400
+            expiresIn: 56400
         });
     },
     /**
@@ -48,8 +47,7 @@ const Utility = {
     comparePassword: (password, hash) => {
         return new Promise((resolve, reject) => {
             bcrypt.compare(password, hash, (err, isMatch) => {
-                if (err) reject(err);
-                else resolve(isMatch);
+                err ? reject(err) : resolve(isMatch);
             });
         });
     },
@@ -131,12 +129,12 @@ const Utility = {
         };
         return model;
     },
-        /**
-     * Get API limit and offset
-     * @param {Integer} page
-     * @param {Integer} size
-     * @return {Object} object containing limit and offset
-     */
+    /**
+ * Get API limit and offset
+ * @param {Integer} page
+ * @param {Integer} size
+ * @return {Object} object containing limit and offset
+ */
     getPagination: (page = 0, size = 5) => {
         let limit = size;
         let offset = page * size;
