@@ -10,7 +10,8 @@ const AddressModel = require("../../model/address");
 const Utility = require("../../utility");
 
 const addressController = {
-    /** */
+    /** Create address in the database
+     */
     create: (req, res) => {
         const payload = req.body;
         return new Promise((resolve, reject) => {
@@ -23,25 +24,23 @@ const addressController = {
                 });
         });
     },
-    /** Get user address from database
+    /** Get address from the database
      */
     getAddress: (req, res) => {
         return new Promise((resolve, reject) => {
             AddressModel.findOne({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
                 .then(data => {
-                    console.log("WHAT HAPPENED WHEN GET DATA", data);
                     !data ?
                         resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
                         :
                         resolve(res.status(200).send(Utility.formatResponse(200, data)));
                 })
                 .catch(err => {
-                    console.log("WHAT HAPPENED WHEN CATCH DATA", err)
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     },
-    /** Updating address of a particular user in the database
+    /** Updating address in the database
      */
     updateAddress: (req, res) => {
         return new Promise((resolve, reject) => {
@@ -49,11 +48,9 @@ const addressController = {
             AddressModel.update({ ...payload, updated_by: req.body.userId },
                 { where: { parent: req.body.parent, parent_id: req.body.parent_id } })
                 .then(updatedData => {
-                    console.log("WHAT HAPPENED WHEN UPDATE")
                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
                 })
                 .catch(err => {
-                    console.log("CATCH BLOCK OF UPDATE")
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });

@@ -12,29 +12,8 @@ const CityModel = require("../../model/city");
 const Utility = require("../../utility/index");
 
 const cityController = {
-  /** Get cities from database based on query type search if provided
-   */
-  getCities: (req, res) => {
-    let cond = req.body.id ? req.body.id : null;
-    return new Promise((resolve, reject) => {
-      CityModel.findAll(cond !== null ? { where: { id: cond } } : {})
-        .then((list) => {
-          if (list.length > 0) {
-            resolve(
-              res.status(200).send(Utility.formatResponse(200, { list }))
-            );
-          } else {
-            resolve(
-              res.status(404).send(Utility.formatResponse(404, `No Data Found`))
-            );
-          }
-        })
-        .catch((err) => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
-  },
-  /** Creating a new city record in the database.*/
+  /** Creating city in the database
+ */
   createCity: (req, res) => {
     return new Promise((resolve, reject) => {
       const payload = req.body;
@@ -43,43 +22,38 @@ const cityController = {
           resolve(res.status(200).send(Utility.formatResponse(200, { city })));
         })
         .catch((err) => {
-          resolve(
-            res
-              .status(409)
-              .send(Utility.formatResponse(409, `${err.errors[0].message}`))
-          );
+          resolve(res.status(409).send(Utility.formatResponse(409, `${err.errors[0].message}`)));
         });
     });
   },
-
-  /** Finding city in database, if found then updating it with newly entered data.*/
+  /** Get cities from database
+   */
+  getCities: (req, res) => {
+    return new Promise((resolve, reject) => {
+      CityModel.findAll({ where: { state_id: req.params.id } })
+        .then(list => {
+          if (list.length > 0) {
+            resolve(res.status(200).send(Utility.formatResponse(200, { list })));
+          } else {
+            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+          }
+        })
+        .catch(err => {
+          reject(res.status(500).send(Utility.formatResponse(500, err)));
+        });
+    });
+  },
+  /** Updating city in database
+   */
   updateCity: (req, res) => {
     return new Promise((resolve, reject) => {
-      CityModel.findByPk(req.params.id)
-        .then((city) => {
-          if (city) {
-            const updatedCityObject = { ...city, ...req.body };
-            CityModel.update(
-              { ...updatedCityObject },
-              { where: { id: req.params.id } }
-            )
-              .then((updatedData) => {
-                resolve(
-                  res
-                    .status(200)
-                    .send(Utility.formatResponse(200, `Updated Successfully`))
-                );
-              })
-              .catch((err) => {
-                reject(res.status(500).send(Utility.formatResponse(500, err)));
-              });
-          } else {
-            resolve(
-              res
-                .status(404)
-                .send(Utility.formatResponse(404, `City Not Found`))
-            );
-          }
+      const updatedCityObject = { ...city, ...req.body };
+      CityModel.update(
+        { ...updatedCityObject },
+        { where: { id: req.params.id } }
+      )
+        .then((updatedData) => {
+          resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
         })
         .catch((err) => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
@@ -87,7 +61,8 @@ const cityController = {
     });
   },
 
-  /** Finding the matched id record of city in database, if found then deleting the particular record.*/
+  /** Finding the matched id record of city in database then deleting the particular record
+  */
   removeCity: (req, res) => {
     return new Promise((resolve, reject) => {
       CityModel.findByPk(req.params.id)
@@ -95,28 +70,20 @@ const cityController = {
           if (city) {
             CityModel.destroy({ where: { id: req.params.id } })
               .then((deletedData) => {
-                resolve(
-                  res
-                    .status(200)
-                    .send(Utility.formatResponse(200, `Deleted Successfully`))
-                );
+                resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
               })
               .catch((err) => {
                 reject(res.status(500).send(Utility.formatResponse(500, err)));
               });
           } else {
-            resolve(
-              res
-                .status(404)
-                .send(Utility.formatResponse(404, `City Not Found`))
-            );
+            resolve(res.status(404).send(Utility.formatResponse(404, `City Not Found`)));
           }
         })
         .catch((err) => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
         });
     });
-  },
+  }
 };
 
 module.exports = cityController;

@@ -11,7 +11,7 @@ const Sequelize = require("sequelize");
 const sequelize = require("../../sequelize");
 
 const UserModel = sequelize.define(
-    'users',        //table name
+    'users',     //table name
     {
         username: {
             type: Sequelize.STRING,

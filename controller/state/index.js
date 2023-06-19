@@ -15,21 +15,16 @@ const stateController = {
   /** Get states from database based on query type search if provided
    */
   getStates: (req, res) => {
-    let cond = req.body.id ? req.body.id : null;
     return new Promise((resolve, reject) => {
-      StateModel.findAll(cond !== null ? { where: { id: cond } } : {})
-        .then((list) => {
-          if (list.length > 0) {
-            resolve(
-              res.status(200).send(Utility.formatResponse(200, { list }))
-            );
-          } else {
-            resolve(
-              res.status(404).send(Utility.formatResponse(404, `No Data Found`))
-            );
-          }
+
+      StateModel.findAll({ where: { country_id: req.params.id } })
+        .then(list => {
+          (list.length > 0) ?
+            resolve(res.status(200).send(Utility.formatResponse(200, { list })))
+            :
+            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
         })
-        .catch((err) => {
+        .catch(err => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
         });
     });

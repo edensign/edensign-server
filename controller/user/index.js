@@ -11,7 +11,6 @@ const Sequelize = require("sequelize");
 
 const UserModel = require("../../model/user");
 const Utility = require("../../utility");
-const addressController = require("../address");
 
 const userController = {
     /** Get users from database based on query type, page, size and search if provided
@@ -70,12 +69,11 @@ const userController = {
     register: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;
-            console.log('USER=>', payload);
             Utility.createHash(payload.password)
-                .then((hash) => {
+                .then(hash => {
                     payload.password = hash;
                     UserModel.create({ ...payload, created_by: req.body.userId })
-                        .then((user) => {
+                        .then(user => {
                             const token = Utility.getSignedToken(user.id);
                             resolve(res.status(200).send(Utility.formatResponse(200, { token, id: user.id })));
                         })
@@ -95,7 +93,7 @@ const userController = {
         return new Promise((resolve, reject) => {
             UserModel.findOne({
                 where: { email: req.body.email, status: "active" }
-            }).then((user) => {
+            }).then(user => {
                 if (user) {
                     Utility.comparePassword(req.body.password, user.password)
                         .then((isMatch) => {
@@ -130,7 +128,7 @@ const userController = {
                 });
         });
     },
-    /** Finding user in database, if found then updating it with newly entered data
+    /** Updating user in the database
      */
     updateUser: (req, res) => {
         return new Promise((resolve, reject) => {
@@ -155,8 +153,8 @@ const userController = {
                     .catch(err => {
                         reject(res.status(500).send(Utility.formatResponse(500, err)));
                     });
-            }
-        })
+            };
+        });
     }
 };
 
