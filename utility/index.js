@@ -35,7 +35,7 @@ const Utility = {
      */
     getSignedToken: id => {
         return jwt.sign({ id: id }, secret, {
-            expiresIn: 56400
+            expiresIn: 86400
         });
     },
     /**

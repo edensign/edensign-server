@@ -37,7 +37,6 @@ router.post('/create-country', verifyToken, countryController.createCountry);
 router.patch('/update-country/:id', verifyToken, countryController.updateCountry);
 router.delete('/delete-country/:id', verifyToken, countryController.removeCountry);
 
-
 // ------------------------------------Common-----------------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
 router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(formatResponse(200, `Verified`)));
@@ -46,6 +45,7 @@ router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(form
 router.get('/get-image/:parent/:parent_id', verifyToken, imageController.getImage);
 router.post('/create-image', verifyToken, imageController.create);
 router.patch('/update-image', verifyToken, imageController.updateImage);
+router.delete('/delete-image', verifyToken, imageController.deleteImage);
 
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);
