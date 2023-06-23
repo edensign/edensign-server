@@ -46,9 +46,22 @@ const ImageController = {
         return new Promise((resolve, reject) => {
             const payload = req.body;
             ImageModel.update({ ...payload, updated_by: req.body.userId },
-                { where: { parent: req.body.parent, parent_id: req.body.parent_id } })
+                { where: { parent: payload.parent, parent_id: payload.parent_id } })
                 .then(updatedData => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Delete image from the db and abs */
+    deleteImage: (req, res) => {
+        return new Promise((resolve, reject) => {
+            const payload = req.body;
+            ImageModel.destroy({ where: { parent: payload.parent, parent_id: payload.parent_id } })
+                .then(deletedImage => {
+                    resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
