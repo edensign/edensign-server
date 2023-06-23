@@ -43,10 +43,10 @@ const UserModel = sequelize.define(
             values: ['active', 'inactive']
         },
         created_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         updated_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         created_by: {
             type: Sequelize.INTEGER

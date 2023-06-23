@@ -28,10 +28,10 @@ const ImageModel = sequelize.define(
             type: Sequelize.STRING
         },
         created_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         updated_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         created_by: {
             type: Sequelize.INTEGER

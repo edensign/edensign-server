@@ -46,10 +46,10 @@ const AddressModel = sequelize.define(
             type: Sequelize.INTEGER
         },
         created_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         updated_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         created_by: {
             type: Sequelize.INTEGER

@@ -21,7 +21,13 @@ const config = require("./config");
 const sequelize = new Sequelize(config.DB, config.DB_USERNAME, config.DB_PASSWORD, {
     host: config.HOST,
     port: config.DB_PORT,
-    dialect: "mysql"    //explicitly specifying mysql database
+    dialect: "mysql",    //explicitly specifying mysql database
+    dialectOptions: {
+        useUTC: false,      //for reading from the database
+        dateStrings: true,
+        typeCast: true
+    },
+    timezone: "+5:30"   //for writing to the database
 });
 
 module.exports = sequelize;
