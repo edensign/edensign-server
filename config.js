@@ -15,7 +15,7 @@ dotenv.config({
 
 module.exports = {
     NODE_ENV : process.env.NODE_ENV || 'local',
-    PORT : process.env.PORT || 5000,
+    PORT : process.env.PORT || 8080,
     HOST : process.env.HOST || 'localhost',
     DB : process.env.DB || 'eden-sign',
     DB_PORT : process.env.DB_PORT || 3306,
