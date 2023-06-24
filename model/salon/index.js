@@ -90,19 +90,19 @@ const SalonModel = sequelize.define(
             values: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
         },
         opening_time: {
-            type: Sequelize.TIME
+            type: 'TIMESTAMP'
         },
         closing_time: {
-            type: Sequelize.TIME
+            type: 'TIMESTAMP'
         },
         established_on: {
             type: Sequelize.DATE
         },
         created_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         updated_at: {
-            type: Sequelize.DATE
+            type: 'TIMESTAMP'
         },
         created_by: {
             type: Sequelize.INTEGER
@@ -114,7 +114,7 @@ const SalonModel = sequelize.define(
     {
         timestamps: false,
         freezeTableName: true
-    }
+    },
 );
 
 module.exports = SalonModel;

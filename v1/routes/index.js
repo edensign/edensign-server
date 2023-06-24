@@ -7,6 +7,7 @@
  */
 
 const express = require("express");
+const path = require('path');
 
 const addressController = require("../../controller/address");
 const cityController = require("../../controller/city");
@@ -19,6 +20,9 @@ const userController = require("../../controller/user");
 const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
+
+//-----------------------------------REACT DASHBOARD------------------------------
+router.get('/', verifyToken, (req, res) => res.sendFile(path.join(__dirname, "../edensign-admin/dist/index.html")));
 
 //-----------------------------------ADDRESS---------------------------------------
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);

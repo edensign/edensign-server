@@ -9,6 +9,7 @@
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require('express');
+const path = require('path');
 
 const config = require("./config");
 let { connectToMysql } = require("./db");
@@ -17,15 +18,16 @@ const v1Routes = require("./v1/routes");
 
 const app = express();
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-
 const corsOptions = {
     origin: 'http://localhost:5173',
     credentials: true,            //access-control-allow-credentials:true
     optionSuccessStatus: 200
 }
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors(corsOptions));
+app.use(express.static(path.join(__dirname, "../edensign-admin/dist/")));
 app.use(rateLimiter);
 
 app.use('/api/v1', v1Routes);
