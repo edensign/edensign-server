@@ -90,6 +90,23 @@ const salonController = {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
+    },
+    /** Finding salon in the database by user id
+     */
+    getSalonByUserId: (req, res) => {
+        return new Promise((resolve, reject) => {
+            SalonModel.findOne({ where: { user_id: req.body.id } })
+                .then(salon => {
+                    if (salon) {
+                        resolve(res.status(200).send(Utility.formatResponse(200, salon)));
+                    } else {
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                    }
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
     }
 }
 

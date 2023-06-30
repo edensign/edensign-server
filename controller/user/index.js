@@ -100,9 +100,15 @@ const userController = {
                             if (isMatch) {
                                 const token = Utility.getSignedToken(user.id);
                                 resolve(res.status(200)
-                                    .send(Utility.formatResponse(200, { token, username: user.username, type: user.type })));
+                                    .send(Utility.formatResponse(200, {
+                                        token,
+                                        id: user.id,
+                                        type: user.type,
+                                        username: user.username
+                                    })));
                             } else {
-                                resolve(res.status(200).send(Utility.formatResponse(200, `Username and Password do not match`)));
+                                resolve(res.status(200).send(Utility
+                                    .formatResponse(200, `Username and Password do not match`)));
                             };
                         });
                 } else {

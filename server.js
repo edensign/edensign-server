@@ -27,7 +27,6 @@ const corsOptions = {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors(corsOptions));
-app.use(express.static(path.join(__dirname, "../edensign-admin/dist/")));
 app.use(rateLimiter);
 
 app.use('/api/v1', v1Routes);

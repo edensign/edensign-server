@@ -21,9 +21,6 @@ const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
 
-//-----------------------------------REACT DASHBOARD------------------------------
-router.get('/', verifyToken, (req, res) => res.sendFile(path.join(__dirname, "../edensign-admin/dist/index.html")));
-
 //-----------------------------------ADDRESS---------------------------------------
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);
 router.post('/create-address', verifyToken, addressController.create);
@@ -53,6 +50,7 @@ router.delete('/delete-image', verifyToken, imageController.deleteImage);
 
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);
+router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
 router.post('/create-salon', verifyToken, salonController.createSalon);
 router.patch('/update-salon', verifyToken, salonController.updateSalon);
 
