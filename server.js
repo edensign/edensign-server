@@ -9,6 +9,7 @@
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require('express');
+const fileUpload = require("express-fileupload");
 const path = require('path');
 
 const config = require("./config");
@@ -24,9 +25,11 @@ const corsOptions = {
     optionSuccessStatus: 200
 }
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({ limit: "20mb" }));
+app.use(bodyParser.urlencoded({ limit: "20mb", extended: true, parameterLimit: 50000 }));
+// app.use(express.json());
 app.use(cors(corsOptions));
+app.use(fileUpload());   //express-fileupload middleware
 app.use(rateLimiter);
 
 app.use('/api/v1', v1Routes);

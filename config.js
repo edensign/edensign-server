@@ -24,3 +24,5 @@ module.exports = {
     SECRET : process.env.SECRET || "EdEn@@#12sIgN",
     SALT : process.env.SALT || 16
 };
+
+// ed#n@sign321

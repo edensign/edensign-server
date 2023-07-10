@@ -32,11 +32,10 @@ const cityController = {
     return new Promise((resolve, reject) => {
       CityModel.findAll({ where: { state_id: req.params.id } })
         .then(list => {
-          if (list.length > 0) {
-            resolve(res.status(200).send(Utility.formatResponse(200, { list })));
-          } else {
+          (list.length > 0) ?
+            resolve(res.status(200).send(Utility.formatResponse(200, { list })))
+            :
             resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-          }
         })
         .catch(err => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));

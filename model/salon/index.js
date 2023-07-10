@@ -16,6 +16,10 @@ const SalonModel = sequelize.define(
         user_id: {
             type: Sequelize.INTEGER
         },
+        category: {
+            type: Sequelize.ENUM,
+            values: ['A', 'B']
+        },
         name: {
             type: Sequelize.STRING,
             allowNull: false

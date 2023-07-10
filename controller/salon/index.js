@@ -51,7 +51,6 @@ const salonController = {
             })
                 .then(list => {
                     const { count, rows } = list;
-
                     if (count > 0) {
                         resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })));
                     } else {

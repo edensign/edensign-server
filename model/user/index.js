@@ -42,6 +42,9 @@ const UserModel = sequelize.define(
             type: Sequelize.ENUM,
             values: ['active', 'inactive']
         },
+        agreement: {
+            type: Sequelize.BOOLEAN
+        },
         created_at: {
             type: 'TIMESTAMP'
         },

@@ -8,6 +8,7 @@
 
 const ImageModel = require("../../model/image");
 const Utility = require("../../utility");
+// const uploadingImage = require("../../utility/uploadImageToAzure");
 
 const ImageController = {
     /** Get image/images from database based on parent
@@ -62,6 +63,19 @@ const ImageController = {
             ImageModel.destroy({ where: { parent: payload.parent, parent_id: payload.parent_id } })
                 .then(deletedImage => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Upload image to abs
+    */
+    uploadImage: (req, res) => {
+        return new Promise((resolve, reject) => {
+            Utility.uploadingImageToAzure("salon", req.files.file.data, req.body.name)
+                .then(upload => {
+                    resolve(res.status(200).send(Utility.formatResponse(200, `Uploaded Successfully`)));
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));

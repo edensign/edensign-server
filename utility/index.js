@@ -8,12 +8,16 @@
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { BlobServiceClient } = require("@azure/storage-blob");
 
 const config = require("../config");
 
 const salt = config.SALT;
 const secret = config.SECRET;
 
+const blobServiceClient = new BlobServiceClient(
+    "https://edensign.blob.core.windows.net/image-storage?sp=racwdl&st=2023-06-16T13:12:46Z&se=2023-07-16T21:12:46Z&spr=https&sv=2022-11-02&sr=c&sig=0a1%2BeoNqOGMszIBJa1MWF6LYY0gTd5E0JJLEcxdeN0U%3D"
+);
 
 const Utility = {
     /**
@@ -130,17 +134,38 @@ const Utility = {
         return model;
     },
     /**
- * Get API limit and offset
- * @param {Integer} page
- * @param {Integer} size
- * @return {Object} object containing limit and offset
- */
+     * Get API limit and offset
+     * @param {Integer} page
+     * @param {Integer} size
+     * @return {Object} object containing limit and offset
+     */
     getPagination: (page = 0, size = 5) => {
         let limit = size;
         let offset = page * size;
         return { limit, offset }
+    },
+    /**
+     * Upload image to azure blob storage
+     * @param {Buffer} file
+     * @param {String} name
+     * @return {String} bytes of data saved on azure 
+     */
+    uploadingImageToAzure: async (folderName, file, formattedName) => {
+    /** Uploads the given image in the specified azure container 
+     */
+        try {
+            const containerClient = blobServiceClient.getContainerClient(folderName);
+            const blobClient = containerClient.getBlobClient(formattedName);
+            const blockBlobClient = blobClient.getBlockBlobClient();
+            const result = await blockBlobClient.uploadData(file, {
+                blockSize: 4 * 1024 * 1024,       // 4 MiB max block size
+                concurrency: 20,                 // maximum number of parallel transfer workers
+                onProgress: ev => console.log("Azure Storage Result=>", ev)
+            });
+        } catch (error) {
+            throw error;
+        }
     }
-
 };
 
 module.exports = Utility;

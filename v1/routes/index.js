@@ -45,6 +45,7 @@ router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(form
 //--------------------------------------IMAGE-----------------------------------------
 router.get('/get-image/:parent/:parent_id', verifyToken, imageController.getImage);
 router.post('/create-image', verifyToken, imageController.create);
+router.post('/upload-image', verifyToken, imageController.uploadImage);
 router.patch('/update-image', verifyToken, imageController.updateImage);
 router.delete('/delete-image', verifyToken, imageController.deleteImage);
 
@@ -62,9 +63,10 @@ router.delete('/delete-state/:id', verifyToken, stateController.removeState);
 
 //---------------------------------------USER-------------------------------------------
 router.get('/get-users', verifyToken, userController.getUsers);
+router.get('/profile', verifyToken, userController.profile);
+router.get('/get-agreement', verifyToken, userController.getAgreement);
 router.post('/register', verifyToken, userController.register);
 router.post('/login', userController.login);
-router.get('/profile', verifyToken, userController.profile);
 router.patch('/update-user', verifyToken, userController.updateUser);
 
 
