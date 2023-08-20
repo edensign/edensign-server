@@ -9,7 +9,7 @@
 const Sequelize = require("sequelize");
 
 const CityModel = require("../../model/city");
-const Utility = require("../../utility/index");
+const Utility = require("../../utility");
 
 const cityController = {
   /** Creating city in the database

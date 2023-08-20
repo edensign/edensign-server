@@ -7,17 +7,18 @@
  */
 
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const { BlobServiceClient } = require("@azure/storage-blob");
+const jwt = require("jsonwebtoken");
+const Sequelize = require("sequelize");
 
 const config = require("../config");
+const sequelize = require("../sequelize");
 
 const salt = config.SALT;
 const secret = config.SECRET;
+const sasURL = config.IMAGE_CONTAINER_SAS_URL;
 
-const blobServiceClient = new BlobServiceClient(
-    "https://edensign.blob.core.windows.net/image-storage?sp=racwdl&st=2023-06-16T13:12:46Z&se=2023-07-16T21:12:46Z&spr=https&sv=2022-11-02&sr=c&sig=0a1%2BeoNqOGMszIBJa1MWF6LYY0gTd5E0JJLEcxdeN0U%3D"
-);
+const blobServiceClient = new BlobServiceClient(sasURL);
 
 const Utility = {
     /**
@@ -98,20 +99,26 @@ const Utility = {
      */
     verifyToken: (req, res, next) => {
         return new Promise((resolve, reject) => {
-            const token = req.headers['x-access-token'];
-            if (!token) {
-                resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
+
+            const type = req.headers['type'];
+            if (type === "admin") {
+                const token = req.headers['x-access-token'];
+                if (!token) {
+                    resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
+                }
+                else {
+                    jwt.verify(token, secret, (err, decoded) => {
+                        try {
+                            req.body.userId = decoded.id;
+                            resolve(next());
+                        } catch (err) {
+                            resolve(res.status(500).send(Utility.formatResponse(500, `Failed To Authenticate Token`)));
+                        };
+                    });
+                }
+            } else {
+                resolve(next());
             }
-            else {
-                jwt.verify(token, secret, (err, decoded) => {
-                    try {
-                        req.body.userId = decoded.id;
-                        resolve(next());
-                    } catch (err) {
-                        resolve(res.status(500).send(Utility.formatResponse(500, `Failed To Authenticate Token`)));
-                    };
-                });
-            };
         });
     },
     /**
@@ -128,6 +135,8 @@ const Utility = {
             case 'salon':
                 model = require("../model/salon");
                 break;
+            case 'amenity':
+                model = require("../model/amenity");
             default:
                 break;
         };
@@ -145,14 +154,22 @@ const Utility = {
         return { limit, offset }
     },
     /**
+     * Format sql query by adding type attribute
+     * @param {String} query
+     * @return {Object} object containing the query with type
+     */
+    executeQuery: (queryString) => {
+        return sequelize.query(queryString, { type: Sequelize.QueryTypes.SELECT });
+    },
+    /**
      * Upload image to azure blob storage
      * @param {Buffer} file
      * @param {String} name
      * @return {String} bytes of data saved on azure 
      */
     uploadingImageToAzure: async (folderName, file, formattedName) => {
-    /** Uploads the given image in the specified azure container 
-     */
+        /** Uploads the given image in the specified azure container 
+         */
         try {
             const containerClient = blobServiceClient.getContainerClient(folderName);
             const blobClient = containerClient.getBlobClient(formattedName);

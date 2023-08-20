@@ -9,7 +9,7 @@
 const Sequelize = require("sequelize");
 
 const CountryModel = require("../../model/country");
-const Utility = require("../../utility/index");
+const Utility = require("../../utility");
 
 const countryController = {
   /** Get countries from database

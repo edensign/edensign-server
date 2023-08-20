@@ -32,7 +32,7 @@ const ImageController = {
     create: (req, res) => {
         const payload = req.body;
         return new Promise((resolve, reject) => {
-            ImageModel.create({ ...payload })
+            ImageModel.create({ ...payload, created_by: req.body.userId })
                 .then(image => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Success`)));
                 })

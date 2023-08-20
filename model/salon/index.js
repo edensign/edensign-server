@@ -16,6 +16,9 @@ const SalonModel = sequelize.define(
         user_id: {
             type: Sequelize.INTEGER
         },
+        banner_image: {
+            type: Sequelize.TEXT('long')
+        },
         category: {
             type: Sequelize.ENUM,
             values: ['A', 'B']
@@ -97,13 +100,13 @@ const SalonModel = sequelize.define(
             values: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
         },
         opening_time: {
-            type: 'TIMESTAMP'
+            type: 'DATETIME'
         },
         closing_time: {
-            type: 'TIMESTAMP'
+            type: 'DATETIME'
         },
         established_on: {
-            type: Sequelize.DATE
+            type: 'DATETIME'
         },
         created_at: {
             type: 'TIMESTAMP'

@@ -9,7 +9,7 @@
 const Sequelize = require("sequelize");
 
 const StateModel = require("../../model/state");
-const Utility = require("../../utility/index");
+const Utility = require("../../utility");
 
 const stateController = {
   /** Get states from database based on query type search if provided

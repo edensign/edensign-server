@@ -10,11 +10,13 @@ const express = require("express");
 const path = require('path');
 
 const addressController = require("../../controller/address");
+const amenityController = require("../../controller/amenity");
 const cityController = require("../../controller/city");
 const commonController = require("../../controller/common");
 const countryController = require("../../controller/country");
 const imageController = require("../../controller/image");
 const salonController = require("../../controller/salon");
+const serviceController = require("../../controller/service");
 const stateController = require("../../controller/state");
 const userController = require("../../controller/user");
 const { verifyToken, formatResponse } = require("../../utility");
@@ -25,6 +27,11 @@ const router = express.Router();
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);
 router.post('/create-address', verifyToken, addressController.create);
 router.patch('/update-address', verifyToken, addressController.updateAddress);
+
+//-----------------------------------AMENITY---------------------------------------
+router.get('/get-amenities', verifyToken, amenityController.getAll);
+router.post('/create-amenity', verifyToken, amenityController.createAmenity);
+router.patch('/update-amenity', verifyToken, amenityController.updateAmenity);
 
 //-------------------------------------CITY----------------------------------------
 router.get('/get-cities/:id', verifyToken, cityController.getCities);
@@ -51,9 +58,16 @@ router.delete('/delete-image', verifyToken, imageController.deleteImage);
 
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);
+router.get('/get-salon-list', verifyToken, salonController.getSalonList);   //using mysql JOIN
 router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
+router.post('/get-salon-detail', salonController.getSalonDetail);   //verifyToken,using mysql JOIN
 router.post('/create-salon', verifyToken, salonController.createSalon);
 router.patch('/update-salon', verifyToken, salonController.updateSalon);
+
+//-----------------------------------SERVICE---------------------------------------
+router.get('/get-services', verifyToken, serviceController.getAll);
+router.post('/create-service', verifyToken, serviceController.createService);
+router.patch('/update-service', verifyToken, serviceController.updateService);
 
 //--------------------------------------STATE-------------------------------------------
 router.get('/get-states/:id', verifyToken, stateController.getStates);
