@@ -40,6 +40,11 @@ const userController = {
                             email: {
                                 [Op.like]: `%${search}%`
                             }
+                        },
+                        {
+                            status: {
+                                [Op.like]: `${search}%`
+                            }
                         }
                     ]
                 };

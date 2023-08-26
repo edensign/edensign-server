@@ -112,7 +112,7 @@ const countryController = {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
         });
     });
-  },
+  }
 };
 
 module.exports = countryController;

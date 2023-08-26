@@ -18,18 +18,11 @@ const AmenityController = {
     getAll: (req, res) => {
         const { page, size, search } = req.query;
         const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
-        let cond = null;
 
-        if (req.query.type) {
-            cond = req.query.type.split(',');
-        }
         return new Promise((resolve, reject) => {
-            let searchCond = {
-                type: cond
-            };
+            let searchCond = {};
             if (search) {
                 searchCond = {
-                    ...searchCond,
                     [Op.or]: [
                         {
                             name: {
@@ -37,18 +30,14 @@ const AmenityController = {
                             }
                         },
                         {
-                            email: {
-                                [Op.like]: `%${search}%`
+                            status: {
+                                [Op.like]: `${search}%`
                             }
                         }
                     ]
                 };
-            }     //where: { ...searchCond },
-            AmenityModel.findAndCountAll({
-                limit, offset, order: [
-                    ["updated_at", "DESC"]
-                ]
-            })
+            }
+            AmenityModel.findAndCountAll({ limit, offset, where: { ...searchCond } })
                 .then(list => {
                     const { count, rows } = list;
                     (count > 0) ?

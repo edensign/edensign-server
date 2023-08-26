@@ -137,6 +137,10 @@ const Utility = {
                 break;
             case 'amenity':
                 model = require("../model/amenity");
+                break;
+            case 'service':
+                model = require("../model/service");
+                break;
             default:
                 break;
         };

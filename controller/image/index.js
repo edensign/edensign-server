@@ -73,7 +73,7 @@ const ImageController = {
     */
     uploadImage: (req, res) => {
         return new Promise((resolve, reject) => {
-            Utility.uploadingImageToAzure("salon", req.files.file.data, req.body.name)
+            Utility.uploadingImageToAzure(req.body.folder, req.files.file.data, req.body.name)
                 .then(upload => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Uploaded Successfully`)));
                 })

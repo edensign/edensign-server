@@ -10,22 +10,19 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../../sequelize");
 
-const ServiceModel = sequelize.define(
-    "service",   //table name
+const SalonServiceImageModel = sequelize.define(
+    "salon_service_image",   //table name
     {
-        name: {
-            type: Sequelize.STRING,
-            allowNull: false,
+        salon_id: {
+            type: Sequelize.INTEGER,
+            allowNull: false
         },
-        description: {
+        service_id: {
+            type: Sequelize.INTEGER,
+            allowNull: false
+        },
+        image: {
             type: Sequelize.STRING
-        },
-        default_image: {
-            type: Sequelize.STRING
-        },
-        status: {
-            type: Sequelize.ENUM,
-            values: ['active', 'inactive']
         },
         created_at: {
             type: 'TIMESTAMP'
@@ -46,4 +43,4 @@ const ServiceModel = sequelize.define(
     }
 );
 
-module.exports = ServiceModel;
+module.exports = SalonServiceImageModel;

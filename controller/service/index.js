@@ -18,18 +18,11 @@ const ServiceController = {
     getAll: (req, res) => {
         const { page, size, search } = req.query;
         const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
-        let cond = null;
 
-        if (req.query.type) {
-            cond = req.query.type.split(',');
-        }
         return new Promise((resolve, reject) => {
-            let searchCond = {
-                type: cond
-            };
+            let searchCond = {};
             if (search) {
                 searchCond = {
-                    ...searchCond,
                     [Op.or]: [
                         {
                             name: {
@@ -37,15 +30,15 @@ const ServiceController = {
                             }
                         },
                         {
-                            email: {
-                                [Op.like]: `%${search}%`
+                            status: {
+                                [Op.like]: `${search}%`
                             }
                         }
                     ]
                 };
-            }     //where: { ...searchCond },
+            }
             ServiceModel.findAndCountAll({
-                limit, offset, order: [
+                limit, offset, where: { ...searchCond }, order: [
                     ["updated_at", "DESC"]
                 ]
             })
