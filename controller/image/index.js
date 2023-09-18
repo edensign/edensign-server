@@ -56,7 +56,7 @@ const ImageController = {
                 });
         });
     },
-    /** Delete image from the db and abs */
+    /** Delete images from the db */
     deleteImage: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;

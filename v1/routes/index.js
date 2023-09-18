@@ -15,7 +15,9 @@ const cityController = require("../../controller/city");
 const commonController = require("../../controller/common");
 const countryController = require("../../controller/country");
 const imageController = require("../../controller/image");
+const JobSeekerController = require("../../controller/jobSeeker");
 const salonController = require("../../controller/salon");
+const salonEmployeeController = require("../../controller/salonEmployee");
 const serviceController = require("../../controller/service");
 const stateController = require("../../controller/state");
 const userController = require("../../controller/user");
@@ -60,11 +62,23 @@ router.delete('/delete-image', verifyToken, imageController.deleteImage);
 router.get('/get-salons', verifyToken, salonController.getSalons);
 router.get('/get-salon-list', verifyToken, salonController.getSalonList);   //using mysql JOIN
 router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
-router.post('/get-salon-detail', salonController.getSalonDetail);   //verifyToken,using mysql JOIN
+router.post('/get-salon-detail', verifyToken, salonController.getSalonDetail);   //using mysql JOIN
 router.post('/create-salon', verifyToken, salonController.createSalon);
 router.patch('/update-salon', verifyToken, salonController.updateSalon);
 
-//-----------------------------------SERVICE---------------------------------------
+//----------------------------------SALON_EMPLOYEE-------------------------------------
+router.get('/get-by-id/:salon_id', verifyToken, salonEmployeeController.getBySalonId);
+router.post('/create-salon-employee', verifyToken, salonEmployeeController.createSalonEmployee);
+router.patch('/update-salon-employee', verifyToken, salonEmployeeController.updateSalonEmployee);
+router.post('/get-salon-employee', verifyToken, salonEmployeeController.getSalonEmployee);   //using mysql JOIN
+
+//------------------------------------JOB_SEEKER---------------------------------------
+router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);
+router.post('/get-job-seeker-detail', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
+router.post('/create-job-seeker', verifyToken, JobSeekerController.createJobSeeker);
+router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSeeker);
+
+//-----------------------------------SERVICE-------------------------------------------
 router.get('/get-services', verifyToken, serviceController.getAll);
 router.post('/create-service', verifyToken, serviceController.createService);
 router.patch('/update-service', verifyToken, serviceController.updateService);

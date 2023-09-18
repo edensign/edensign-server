@@ -141,6 +141,12 @@ const Utility = {
             case 'service':
                 model = require("../model/service");
                 break;
+            case 'salon_employee':
+                model = require("../model/salonEmployee");
+                break;
+            case 'job_seeker':
+                model = require("../model/jobSeeker");
+                break;
             default:
                 break;
         };

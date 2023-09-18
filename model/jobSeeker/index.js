@@ -10,15 +10,9 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../../sequelize");
 
-const SalonEmployeeModel = sequelize.define(
-    "salon_employee",   //table name
+const JobSeekerModel = sequelize.define(
+    "job_seeker",   //table name
     {
-        salon_id: {
-            type: Sequelize.INTEGER
-        },
-        services: {
-            type: Sequelize.STRING
-        },
         name: {
             type: Sequelize.STRING
         },
@@ -29,18 +23,31 @@ const SalonEmployeeModel = sequelize.define(
             type: Sequelize.STRING
         },
         age: {
-            type: Sequelize.STRING
-        },
-        rating: {
             type: Sequelize.INTEGER
         },
         gender: {
             type: Sequelize.ENUM,
             values: ['male', 'female', 'other']
         },
+        qualification: {
+            type: Sequelize.ENUM,
+            values: ['10th', '12th', 'graduate']
+        },
         status: {
             type: Sequelize.ENUM,
             values: ['active', 'inactive']
+        },
+        skills: {
+            type: Sequelize.STRING
+        },
+        hobbies: {
+            type: Sequelize.STRING
+        },
+        experience: {
+            type: Sequelize.STRING
+        },
+        resume: {
+            type: Sequelize.STRING
         },
         created_at: {
             type: 'TIMESTAMP'
@@ -61,4 +68,4 @@ const SalonEmployeeModel = sequelize.define(
     }
 );
 
-module.exports = SalonEmployeeModel;
+module.exports = JobSeekerModel;

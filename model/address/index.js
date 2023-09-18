@@ -15,7 +15,7 @@ const AddressModel = sequelize.define(
     {
         parent: {
             type: Sequelize.ENUM,
-            values: ['salon', 'user']
+            values: ['salon', 'user', 'job_seeker']
         },
         parent_id: {
             type: Sequelize.INTEGER
