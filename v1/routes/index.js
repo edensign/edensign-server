@@ -36,6 +36,7 @@ router.post('/create-amenity', verifyToken, amenityController.createAmenity);
 router.patch('/update-amenity', verifyToken, amenityController.updateAmenity);
 
 //-------------------------------------CITY----------------------------------------
+router.get('/get-cities', verifyToken, cityController.getAll);      //this is for edensign website
 router.get('/get-cities/:id', verifyToken, cityController.getCities);
 router.post('/create-city', verifyToken, cityController.createCity);
 router.patch('/update-city/:id', verifyToken, cityController.updateCity);
@@ -61,8 +62,8 @@ router.delete('/delete-image', verifyToken, imageController.deleteImage);
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);
 router.get('/get-salon-list', verifyToken, salonController.getSalonList);   //using mysql JOIN
-router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
 router.post('/get-salon-detail', verifyToken, salonController.getSalonDetail);   //using mysql JOIN
+router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
 router.post('/create-salon', verifyToken, salonController.createSalon);
 router.patch('/update-salon', verifyToken, salonController.updateSalon);
 
@@ -74,6 +75,7 @@ router.post('/get-salon-employee', verifyToken, salonEmployeeController.getSalon
 
 //------------------------------------JOB_SEEKER---------------------------------------
 router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);
+router.get('/get-job-seeker-list/:page/:size', verifyToken, JobSeekerController.getJobSeekerList);   //using mysql JOIN
 router.post('/get-job-seeker-detail', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
 router.post('/create-job-seeker', verifyToken, JobSeekerController.createJobSeeker);
 router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSeeker);
@@ -84,6 +86,7 @@ router.post('/create-service', verifyToken, serviceController.createService);
 router.patch('/update-service', verifyToken, serviceController.updateService);
 
 //--------------------------------------STATE-------------------------------------------
+router.get('/get-states', verifyToken, stateController.getAll);    //this is for edensign website
 router.get('/get-states/:id', verifyToken, stateController.getStates);
 router.post('/create-state', verifyToken, stateController.createState);
 router.patch('/update-state/:id', verifyToken, stateController.updateState);

@@ -37,6 +37,22 @@ const JobSeekerModel = sequelize.define(
             type: Sequelize.ENUM,
             values: ['active', 'inactive']
         },
+        paid: {
+            type: Sequelize.ENUM,
+            values: ['yes', 'no']
+        },
+        hired_in: {
+            type: Sequelize.STRING
+        },
+        designation: {
+            type: Sequelize.STRING
+        },
+        description: {
+            type: Sequelize.STRING
+        },
+        previous_employer: {
+            type: Sequelize.STRING
+        },
         skills: {
             type: Sequelize.STRING
         },

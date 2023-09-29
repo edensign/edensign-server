@@ -15,7 +15,12 @@ const ImageController = {
      */
     getImage: (req, res) => {
         return new Promise((resolve, reject) => {
-            ImageModel.findAll({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
+            ImageModel.findAll({
+                where: { parent: req.params.parent, parent_id: req.params.parent_id },
+                order: [
+                    ["priority", "DESC"]
+                ]
+            })
                 .then(data => {
                     !data ?
                         resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
