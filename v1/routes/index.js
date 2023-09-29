@@ -22,6 +22,8 @@ const serviceController = require("../../controller/service");
 const stateController = require("../../controller/state");
 const userController = require("../../controller/user");
 const { verifyToken, formatResponse } = require("../../utility");
+const skillController = require("../../controller/skill");
+const SkillController = require("../../controller/skill");
 
 const router = express.Router();
 
@@ -82,6 +84,12 @@ router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSee
 router.get('/get-services', verifyToken, serviceController.getAll);
 router.post('/create-service', verifyToken, serviceController.createService);
 router.patch('/update-service', verifyToken, serviceController.updateService);
+
+//--------------------------------------SKILL-----------------------------------------
+router.get('/get-skills', verifyToken, skillController.getAll);
+router.get('/get-skill/:id', verifyToken, skillController.getSkillById);
+router.post('/create-skill', verifyToken, skillController.createSkill);
+router.patch('/update-skill', verifyToken, skillController.updateSkill);
 
 //--------------------------------------STATE-------------------------------------------
 router.get('/get-states/:id', verifyToken, stateController.getStates);

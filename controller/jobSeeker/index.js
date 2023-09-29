@@ -42,7 +42,7 @@ const JobSeekerController = {
                 };
             }
             JobSeekerModel.findAndCountAll({
-                limit, offset, where: { ...searchCond }, order: [
+                limit, offset, where: { ...searchCond, status: "active" }, order: [
                     ["updated_at", "DESC"]
                 ]
             })
@@ -92,11 +92,11 @@ const JobSeekerController = {
      */
     getJobSeekerDetail: (req, res) => {
         return new Promise(async (resolve, reject) => {
-            const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
-                                    address.street, address.landmark
-                                    FROM salon 
-                                    INNER JOIN address ON salon.id = address.parent_id
-                                    ORDER BY salon.priority`;
+            const queryString = `SELECT js.id, js.name, js.email, js.contact_no, js.age, js.gender, js.qualification, js.status, js.skills,
+                                    js.description, js.hobbies, js.resume, js.experience,
+                                    address.street, address.landmark, address.city, address.state, address.zipcode
+                                    FROM job_seeker AS js
+                                    LEFT OUTER JOIN address ON address.parent_id = js.id`;
             Utility.executeQuery(queryString)
                 .then(data => {
                     data ?
