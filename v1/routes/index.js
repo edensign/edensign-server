@@ -76,9 +76,8 @@ router.patch('/update-salon-employee', verifyToken, salonEmployeeController.upda
 router.post('/get-salon-employee', verifyToken, salonEmployeeController.getSalonEmployee);   //using mysql JOIN
 
 //------------------------------------JOB_SEEKER---------------------------------------
-router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);
-router.get('/get-job-seeker-list/:page/:size', verifyToken, JobSeekerController.getJobSeekerList);   //using mysql JOIN
-router.post('/get-job-seeker-detail', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
+router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);  //using mysql JOIN
+router.get('/get-job-seeker-detail/:page/:size', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
 router.post('/create-job-seeker', verifyToken, JobSeekerController.createJobSeeker);
 router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSeeker);
 
