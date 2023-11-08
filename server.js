@@ -13,13 +13,13 @@ const fileUpload = require("express-fileupload");
 
 const config = require("./config");
 let { connectToMysql } = require("./db");
-const rateLimiter = require("./utility/rateLimiter")
+const rateLimiter = require("./utility/rateLimiter");
 const v1Routes = require("./v1/routes");
 
 const app = express();
 
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],     //allow multiple domains to connect
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:8081'],     //allow multiple domains to connect
     credentials: true,            //access-control-allow-credentials:true
     optionSuccessStatus: 200
 }
