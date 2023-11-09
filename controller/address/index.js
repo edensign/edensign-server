@@ -15,7 +15,7 @@ const addressController = {
     create: (req, res) => {
         const payload = req.body;
         return new Promise((resolve, reject) => {
-            AddressModel.create({ ...payload })
+            AddressModel.create({ ...payload, created_by: req.body.userId })
                 .then(address => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Success`)));
                 })

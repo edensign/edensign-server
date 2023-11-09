@@ -2,7 +2,7 @@
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  *
  * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use,reproduction, or disclosure of this software is subject to
+ * restricted rights software. The use, reproduction, or disclosure of this software is subject to
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
@@ -10,8 +10,8 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../../sequelize");
 
-const UserModel = sequelize.define(
-    'users',     //table name
+const CustomerModel = sequelize.define(
+    "customer",   //table name
     {
         username: {
             type: Sequelize.STRING,
@@ -19,31 +19,14 @@ const UserModel = sequelize.define(
         },
         password: {
             type: Sequelize.STRING,
-            allowNull: false,
-            unique: true
-        },
-        email: {
-            type: Sequelize.STRING,
             allowNull: false
         },
         contact_no: {
             type: Sequelize.STRING,
             allowNull: false
         },
-        type: {
-            type: Sequelize.ENUM,
-            values: ['admin', 'salon', 'freelancer']
-        },
-        gender: {
-            type: Sequelize.ENUM,
-            values: ['male', 'female', 'other']
-        },
-        status: {
-            type: Sequelize.ENUM,
-            values: ['active', 'inactive']
-        },
-        agreement: {
-            type: Sequelize.BOOLEAN
+        email: {
+            type: Sequelize.STRING
         },
         created_at: {
             type: 'TIMESTAMP'
@@ -60,8 +43,8 @@ const UserModel = sequelize.define(
     },
     {
         timestamps: false,
-        freezeTableName: true
+        freezeTableName: true,
     }
 );
 
-module.exports = UserModel;
+module.exports = CustomerModel;

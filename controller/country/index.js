@@ -9,7 +9,7 @@
 const Sequelize = require("sequelize");
 
 const CountryModel = require("../../model/country");
-const Utility = require("../../utility/index");
+const Utility = require("../../utility");
 
 const countryController = {
   /** Get countries from database
@@ -112,7 +112,7 @@ const countryController = {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
         });
     });
-  },
+  }
 };
 
 module.exports = countryController;

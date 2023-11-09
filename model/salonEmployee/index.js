@@ -2,7 +2,7 @@
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  *
  * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use,reproduction, or disclosure of this software is subject to
+ * restricted rights software. The use, reproduction, or disclosure of this software is subject to
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
@@ -10,40 +10,37 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../../sequelize");
 
-const AddressModel = sequelize.define(
-    'address',        //table name
+const SalonEmployeeModel = sequelize.define(
+    "salon_employee",   //table name
     {
-        parent: {
+        salon_id: {
+            type: Sequelize.INTEGER
+        },
+        services: {
+            type: Sequelize.STRING
+        },
+        name: {
+            type: Sequelize.STRING
+        },
+        email: {
+            type: Sequelize.STRING
+        },
+        contact_no: {
+            type: Sequelize.STRING
+        },
+        age: {
+            type: Sequelize.STRING
+        },
+        rating: {
+            type: Sequelize.INTEGER
+        },
+        gender: {
             type: Sequelize.ENUM,
-            values: ['salon', 'user', 'job_seeker']
+            values: ['male', 'female', 'other']
         },
-        parent_id: {
-            type: Sequelize.INTEGER
-        },
-        street: {
-            type: Sequelize.STRING,
-            allowNull: false
-        },
-        landmark: {
-            type: Sequelize.STRING
-        },
-        zipcode: {
-            type: Sequelize.STRING
-        },
-        latitude: {
-            type: Sequelize.STRING
-        },
-        longitude: {
-            type: Sequelize.STRING
-        },
-        city: {
-            type: Sequelize.INTEGER
-        },
-        state: {
-            type: Sequelize.INTEGER
-        },
-        country: {
-            type: Sequelize.INTEGER
+        status: {
+            type: Sequelize.ENUM,
+            values: ['active', 'inactive']
         },
         created_at: {
             type: 'TIMESTAMP'
@@ -60,8 +57,8 @@ const AddressModel = sequelize.define(
     },
     {
         timestamps: false,
-        freezeTableName: true
+        freezeTableName: true,
     }
 );
 
-module.exports = AddressModel;
+module.exports = SalonEmployeeModel;

@@ -9,7 +9,7 @@
 const Sequelize = require("sequelize");
 
 const CityModel = require("../../model/city");
-const Utility = require("../../utility/index");
+const Utility = require("../../utility");
 
 const cityController = {
   /** Creating city in the database
@@ -32,11 +32,10 @@ const cityController = {
     return new Promise((resolve, reject) => {
       CityModel.findAll({ where: { state_id: req.params.id } })
         .then(list => {
-          if (list.length > 0) {
-            resolve(res.status(200).send(Utility.formatResponse(200, { list })));
-          } else {
+          (list.length > 0) ?
+            resolve(res.status(200).send(Utility.formatResponse(200, { list })))
+            :
             resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-          }
         })
         .catch(err => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
@@ -80,6 +79,23 @@ const cityController = {
           }
         })
         .catch((err) => {
+          reject(res.status(500).send(Utility.formatResponse(500, err)));
+        });
+    });
+  },
+  /** Get all the cities from database for edensign website
+   */
+  getAll: (req, res) => {
+    return new Promise((resolve, reject) => {
+      CityModel.findAndCountAll()
+        .then(list => {
+          const { count, rows } = list;
+          (count > 0) ?
+            resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
+            :
+            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+        })
+        .catch(err => {
           reject(res.status(500).send(Utility.formatResponse(500, err)));
         });
     });

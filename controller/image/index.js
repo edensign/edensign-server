@@ -8,13 +8,19 @@
 
 const ImageModel = require("../../model/image");
 const Utility = require("../../utility");
+// const uploadingImage = require("../../utility/uploadImageToAzure");
 
 const ImageController = {
     /** Get image/images from database based on parent
      */
     getImage: (req, res) => {
         return new Promise((resolve, reject) => {
-            ImageModel.findAll({ where: { parent: req.params.parent, parent_id: req.params.parent_id } })
+            ImageModel.findAll({
+                where: { parent: req.params.parent, parent_id: req.params.parent_id },
+                order: [
+                    ["priority", "DESC"]
+                ]
+            })
                 .then(data => {
                     !data ?
                         resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
@@ -31,7 +37,7 @@ const ImageController = {
     create: (req, res) => {
         const payload = req.body;
         return new Promise((resolve, reject) => {
-            ImageModel.create({ ...payload })
+            ImageModel.create({ ...payload, created_by: req.body.userId })
                 .then(image => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Success`)));
                 })
@@ -55,13 +61,26 @@ const ImageController = {
                 });
         });
     },
-    /** Delete image from the db and abs */
+    /** Delete images from the db */
     deleteImage: (req, res) => {
         return new Promise((resolve, reject) => {
             const payload = req.body;
             ImageModel.destroy({ where: { parent: payload.parent, parent_id: payload.parent_id } })
                 .then(deletedImage => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Upload image to abs
+    */
+    uploadImage: (req, res) => {
+        return new Promise((resolve, reject) => {
+            Utility.uploadingImageToAzure(req.body.folder, req.files.file.data, req.body.name)
+                .then(upload => {
+                    resolve(res.status(200).send(Utility.formatResponse(200, `Uploaded Successfully`)));
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));

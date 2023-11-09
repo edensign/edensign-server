@@ -40,6 +40,11 @@ const userController = {
                             email: {
                                 [Op.like]: `%${search}%`
                             }
+                        },
+                        {
+                            status: {
+                                [Op.like]: `${search}%`
+                            }
                         }
                     ]
                 };
@@ -51,7 +56,6 @@ const userController = {
             })
                 .then(list => {
                     const { count, rows } = list;
-
                     if (count > 0) {
                         resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })));
                     } else {
@@ -61,7 +65,6 @@ const userController = {
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
-
         });
     },
     /** Creating hash of password and a new user & assigning an Auth Token
@@ -100,14 +103,20 @@ const userController = {
                             if (isMatch) {
                                 const token = Utility.getSignedToken(user.id);
                                 resolve(res.status(200)
-                                    .send(Utility.formatResponse(200, { token, username: user.username, type: user.type })));
+                                    .send(Utility.formatResponse(200, {
+                                        token,
+                                        id: user.id,
+                                        type: user.type,
+                                        username: user.username
+                                    })));
                             } else {
-                                resolve(res.status(200).send(Utility.formatResponse(200, `Username and Password do not match`)));
-                            };
+                                resolve(res.status(200).send(Utility
+                                    .formatResponse(200, `Username and Password do not match`)));
+                            }
                         });
                 } else {
                     resolve(res.status(200).send(Utility.formatResponse(200, `User does not exist`)));
-                };
+                }
             });
         });
     },
@@ -121,7 +130,7 @@ const userController = {
                         resolve(res.status(404).send(Utility.formatResponse(404, `User Not Found`)));
                     } else {
                         resolve(res.status(200).send(Utility.formatResponse(200, user)));
-                    };
+                    }
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
@@ -153,7 +162,24 @@ const userController = {
                     .catch(err => {
                         reject(res.status(500).send(Utility.formatResponse(500, err)));
                     });
-            };
+            }
+        });
+    },
+    /** Finding salon user agreement value from the database by user id
+    */
+    getAgreement: (req, res) => {
+        return new Promise((resolve, reject) => {
+            UserModel.findOne({ where: { id: req.body.userId, type: "salon" } })
+                .then(data => {
+                    if (data) {
+                        resolve(res.status(200).send(Utility.formatResponse(200, data.agreement)));
+                    } else {
+                        resolve(res.status(404).send(Utility.formatResponse(404, `Invalid User Type`)));
+                    }
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
         });
     }
 };

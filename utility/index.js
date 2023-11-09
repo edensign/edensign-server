@@ -7,13 +7,18 @@
  */
 
 const bcrypt = require("bcryptjs");
+const { BlobServiceClient } = require("@azure/storage-blob");
 const jwt = require("jsonwebtoken");
+const Sequelize = require("sequelize");
 
 const config = require("../config");
+const sequelize = require("../sequelize");
 
 const salt = config.SALT;
 const secret = config.SECRET;
+const sasURL = config.IMAGE_CONTAINER_SAS_URL;
 
+const blobServiceClient = new BlobServiceClient(sasURL);
 
 const Utility = {
     /**
@@ -94,20 +99,26 @@ const Utility = {
      */
     verifyToken: (req, res, next) => {
         return new Promise((resolve, reject) => {
-            const token = req.headers['x-access-token'];
-            if (!token) {
-                resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
+
+            const type = req.headers['type'];
+            if (type === "admin") {
+                const token = req.headers['x-access-token'];
+                if (!token) {
+                    resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
+                }
+                else {
+                    jwt.verify(token, secret, (err, decoded) => {
+                        try {
+                            req.body.userId = decoded.id;
+                            resolve(next());
+                        } catch (err) {
+                            resolve(res.status(500).send(Utility.formatResponse(500, `Failed To Authenticate Token`)));
+                        };
+                    });
+                }
+            } else {
+                resolve(next());
             }
-            else {
-                jwt.verify(token, secret, (err, decoded) => {
-                    try {
-                        req.body.userId = decoded.id;
-                        resolve(next());
-                    } catch (err) {
-                        resolve(res.status(500).send(Utility.formatResponse(500, `Failed To Authenticate Token`)));
-                    };
-                });
-            };
         });
     },
     /**
@@ -124,23 +135,64 @@ const Utility = {
             case 'salon':
                 model = require("../model/salon");
                 break;
+            case 'amenity':
+                model = require("../model/amenity");
+                break;
+            case 'service':
+                model = require("../model/service");
+                break;
+            case 'salon_employee':
+                model = require("../model/salonEmployee");
+                break;
+            case 'job_seeker':
+                model = require("../model/jobSeeker");
+                break;
             default:
                 break;
         };
         return model;
     },
     /**
- * Get API limit and offset
- * @param {Integer} page
- * @param {Integer} size
- * @return {Object} object containing limit and offset
- */
+     * Get API limit and offset
+     * @param {Integer} page
+     * @param {Integer} size
+     * @return {Object} object containing limit and offset
+     */
     getPagination: (page = 0, size = 5) => {
         let limit = size;
         let offset = page * size;
         return { limit, offset }
+    },
+    /**
+     * Format sql query by adding type attribute
+     * @param {String} query
+     * @return {Object} object containing the query with type
+     */
+    executeQuery: (queryString) => {
+        return sequelize.query(queryString, { type: Sequelize.QueryTypes.SELECT });
+    },
+    /**
+     * Upload image to azure blob storage
+     * @param {Buffer} file
+     * @param {String} name
+     * @return {String} bytes of data saved on azure 
+     */
+    uploadingImageToAzure: async (folderName, file, formattedName) => {
+        /** Uploads the given image in the specified azure container 
+         */
+        try {
+            const containerClient = blobServiceClient.getContainerClient(folderName);
+            const blobClient = containerClient.getBlobClient(formattedName);
+            const blockBlobClient = blobClient.getBlockBlobClient();
+            const result = await blockBlobClient.uploadData(file, {
+                blockSize: 4 * 1024 * 1024,       // 4 MiB max block size
+                concurrency: 20,                 // maximum number of parallel transfer workers
+                onProgress: ev => console.log("Azure Storage Result=>", ev)
+            });
+        } catch (error) {
+            throw error;
+        }
     }
-
 };
 
 module.exports = Utility;

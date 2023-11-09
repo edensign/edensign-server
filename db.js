@@ -17,10 +17,10 @@ const connectToMysql = () => {
     if (!db) {
         db = sequelize.authenticate()
             .then(() => {
-                console.log("Connected To Database Successfully!");
+                return "Connected To Database Successfully!";
             })
-            .catch((err) => {
-                console.log("Error Connecting To Database ", err);
+            .catch(err => {
+                throw new Error("Error Connecting To Database ", err);
             })
     }
     return db;

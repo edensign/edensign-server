@@ -2,7 +2,7 @@
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  *
  * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use,reproduction, or disclosure of this software is subject to
+ * restricted rights software. The use, reproduction, or disclosure of this software is subject to
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
@@ -10,24 +10,18 @@ const Sequelize = require("sequelize");
 
 const sequelize = require("../../sequelize");
 
-const ImageModel = sequelize.define(
-    "images",     //table name
+const SalonServiceImageModel = sequelize.define(
+    "salon_service_image",   //table name
     {
-        parent: {
-            type: Sequelize.ENUM,
-            values: ['salon', 'user']
+        salon_id: {
+            type: Sequelize.INTEGER,
+            allowNull: false
         },
-        parent_id: {
-            type: Sequelize.INTEGER
+        service_id: {
+            type: Sequelize.INTEGER,
+            allowNull: false
         },
-        priority: {
-            type: Sequelize.INTEGER
-        },
-        type: {
-            type: Sequelize.ENUM,
-            values: ['normal', 'banner']
-        },
-        image_src: {
+        image: {
             type: Sequelize.STRING
         },
         created_at: {
@@ -49,4 +43,4 @@ const ImageModel = sequelize.define(
     }
 );
 
-module.exports = ImageModel;
+module.exports = SalonServiceImageModel;

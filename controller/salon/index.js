@@ -7,7 +7,6 @@
  */
 
 const { Op } = require("sequelize");
-const Sequelize = require("sequelize");
 
 const SalonModel = require("../../model/salon");
 const Utility = require("../../utility");
@@ -18,18 +17,11 @@ const salonController = {
     getSalons: (req, res) => {
         const { page, size, search } = req.query;
         const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
-        let cond = null;
 
-        if (req.query.type) {
-            cond = req.query.type.split(',');
-        }
         return new Promise((resolve, reject) => {
-            let searchCond = {
-                type: cond
-            };
+            let searchCond = {};
             if (search) {
                 searchCond = {
-                    ...searchCond,
                     [Op.or]: [
                         {
                             name: {
@@ -40,23 +32,26 @@ const salonController = {
                             email: {
                                 [Op.like]: `%${search}%`
                             }
+                        },
+                        {
+                            status: {
+                                [Op.like]: `${search}%`
+                            }
                         }
                     ]
                 };
-            }   //where: { ...searchCond },  to be specified
+            }
             SalonModel.findAndCountAll({
-                limit, offset, order: [
+                limit, offset, where: { ...searchCond }, order: [
                     ["updated_at", "DESC"]
                 ]
             })
                 .then(list => {
                     const { count, rows } = list;
-
-                    if (count > 0) {
-                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })));
-                    } else {
+                    (count > 0) ?
+                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
+                        :
                         resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                    }
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
@@ -85,6 +80,82 @@ const salonController = {
             SalonModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
                 .then(updatedData => {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Finding salon in the database from user id that is received
+     */
+    getSalonByUserId: (req, res) => {
+        return new Promise((resolve, reject) => {
+            SalonModel.findOne({ where: { user_id: req.body.id } })
+                .then(salon => {
+                    if (salon) {
+                        resolve(res.status(200).send(Utility.formatResponse(200, salon)));
+                    } else {
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                    }
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Get all the salons & their associated addresses by performing left outer join on both tables
+     */
+    getSalonList: (req, res) => {
+        return new Promise(async (resolve, reject) => {
+            const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
+                                    address.street, address.landmark
+                                    FROM salon 
+                                    INNER JOIN address ON salon.id = address.parent_id
+                                    ORDER BY salon.priority`;
+            Utility.executeQuery(queryString)
+                .then(data => {
+                    data ?
+                        resolve(res.status(200).send(Utility.formatResponse(200, data)))
+                        :
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Get the salons, their associated addresses & their images by performing join on multiple tables
+     */
+    getSalonDetail: (req, res) => {
+        return new Promise((resolve, reject) => {
+            const salonDetail = {
+                salon: {},
+                images: []
+            };
+            const salon_code = req.body.code;
+            console.log(req.body.code, typeof (req.body.code))
+            const queryString = `SELECT sa.*, 
+                                    address.street, address.landmark, images.image_src
+                                    FROM salon sa
+                                    LEFT OUTER JOIN address ON sa.id = address.parent_id 
+                                    LEFT OUTER JOIN images ON  sa.id = images.parent_id
+                                    WHERE sa.salon_code = '${salon_code}' ORDER BY images.priority`;
+
+            Utility.executeQuery(queryString)
+                .then(response => {
+                    if (response) {
+                        response.map(salon => {
+                            salonDetail.salon = { ...salon };
+                            salonDetail.images.push(salon.image_src);
+                        });
+                        if (salonDetail.salon.image_src) {
+                            delete salonDetail.salon.image_src;
+                        }
+                        console.log("Salon detail=>", salonDetail)
+                        resolve(res.status(200).send(Utility.formatResponse(200, salonDetail)));
+                    } else {
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                    }
                 })
                 .catch(err => {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
