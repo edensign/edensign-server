@@ -14,16 +14,16 @@ dotenv.config({
 });
 
 module.exports = {
-    NODE_ENV : process.env.NODE_ENV || 'local',
-    PORT : process.env.PORT || 8080,
-    HOST : process.env.HOST || 'localhost',
-    DB : process.env.DB || 'eden-sign',
-    DB_PORT : process.env.DB_PORT || 3306,
-    DB_USERNAME : process.env.DB_USERNAME || 'root',
-    DB_PASSWORD : process.env.DB_PASSWORD || '',
-    SECRET : process.env.SECRET || "EdEn@@#12sIgN",
-    SALT : process.env.SALT || 16,
-    IMAGE_CONTAINER_SAS_URL: process.env.IMAGE_CONTAINER_SAS_URL || "https://edensign.blob.core.windows.net/image-storage?sp=racwdli&st=2023-08-07T07:59:09Z&se=2023-10-31T15:59:09Z&spr=https&sv=2022-11-02&sr=c&sig=bYYCJSesNOlgW9vYM2Auma6eBKx2SNPzwU%2FsMDBr7%2B4%3D"
+    NODE_ENV: process.env.NODE_ENV || 'local',
+    PORT: process.env.PORT || 8080,
+    HOST: process.env.HOST || 'localhost',
+    DB: process.env.DB || 'eden-sign',
+    DB_PORT: process.env.DB_PORT || 3306,
+    DB_USERNAME: process.env.DB_USERNAME || 'root',
+    DB_PASSWORD: process.env.DB_PASSWORD || '',
+    SECRET: process.env.SECRET || "EdEn@@#12sIgN",
+    SALT: process.env.SALT || 16,
+    IMAGE_CONTAINER_SAS_URL: process.env.IMAGE_CONTAINER_SAS_URL || "https://edensign1.blob.core.windows.net/image-storage?sp=racwdl&st=2023-11-08T06:00:11Z&se=2024-03-16T14:00:11Z&sv=2022-11-02&sr=c&sig=jUD8G%2F4U%2FxKUuYF4AMpBhL1Nw5zHzGdwGHqeHaxPd5g%3D"
 };
 
 // ed#n@sign321
