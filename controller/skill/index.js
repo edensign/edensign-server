@@ -6,6 +6,8 @@
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
+const { Op } = require("sequelize");
+
 const SkillModel = require("../../model/skill");
 const Utility = require("../../utility");
 
