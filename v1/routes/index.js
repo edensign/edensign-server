@@ -23,7 +23,7 @@ const stateController = require("../../controller/state");
 const userController = require("../../controller/user");
 const { verifyToken, formatResponse } = require("../../utility");
 const skillController = require("../../controller/skill");
-const SkillController = require("../../controller/skill");
+const productController = require("../../controller/product");
 
 const router = express.Router();
 
@@ -60,6 +60,11 @@ router.post('/create-image', verifyToken, imageController.create);
 router.post('/upload-image', verifyToken, imageController.uploadImage);
 router.patch('/update-image', verifyToken, imageController.updateImage);
 router.delete('/delete-image', verifyToken, imageController.deleteImage);
+
+//-----------------------------------PRODUCT-------------------------------------------
+router.get('/get-products', verifyToken, productController.getProducts);
+router.post('/create-product', verifyToken, productController.createProduct);
+router.patch('/update-product', verifyToken, productController.updateProduct);
 
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);

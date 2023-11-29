@@ -17,15 +17,49 @@ const ProductModel = sequelize.define(
             type: Sequelize.STRING,
             allowNull: false
         },
-        company: {
+        brand: {
             type: Sequelize.STRING,
             allowNull: false
         },
         price: {
             type: Sequelize.STRING
         },
-        bought_at: {
+        color: {
+            type: Sequelize.STRING
+        },
+        capacity: {
+            type: Sequelize.STRING
+        },
+        description: {
+            type: Sequelize.STRING
+        },
+        is_home: {
+            type: Sequelize.BOOLEAN
+        },
+        is_bestseller: {
+            type: Sequelize.BOOLEAN
+        },
+        discounted_price: {
+            type: Sequelize.FLOAT
+        },
+        discount_percent: {
+            type: Sequelize.FLOAT
+        },
+        status: {
+            type: Sequelize.ENUM,
+            values: ['active', 'inactive']
+        },
+        created_at: {
             type: 'TIMESTAMP'
+        },
+        updated_at: {
+            type: 'TIMESTAMP'
+        },
+        created_by: {
+            type: Sequelize.INTEGER
+        },
+        updated_by: {
+            type: Sequelize.INTEGER
         }
     },
     {

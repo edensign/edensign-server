@@ -147,6 +147,9 @@ const Utility = {
             case 'job_seeker':
                 model = require("../model/jobSeeker");
                 break;
+            case 'product':
+                model = require("../model/product");
+                break;
             default:
                 break;
         };
