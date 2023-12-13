@@ -90,7 +90,33 @@ const productController = {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
+    },
+    /** API for the  edensign
+     * website  */
+    getProductList: (req, res) => {
+        return new Promise(async (resolve, reject) => {
+            const queryString = `SELECT product.id, product.name, product.brand, product.price, product.color, product.capacity, product.description,
+            product.discount_percent, product.discounted_price, product.is_home,
+             product.is_bestseller, product.status,
+             GROUP_CONCAT(product_image.image_src) AS image_sources
+             FROM product
+            INNER JOIN product_image ON product.id = product_image.parent_id
+             GROUP BY
+            product.id, product.name, product.brand, product.price, product.color, product.capacity, product.description, 
+            product.discount_percent, product.discounted_price, product.is_home, product.is_bestseller, product.status`;
+            Utility.executeQuery(queryString)
+                .then(data => {
+                    console.log('DATATATATTA', data);
+                    data ?
+                        resolve(res.status(200).send(Utility.formatResponse(200, data)))
+                        :
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        })
     }
-}
+};
 
 module.exports = productController;

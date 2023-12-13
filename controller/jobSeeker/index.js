@@ -131,14 +131,15 @@ const JobSeekerController = {
             // }
             if (isObjectEmpty(req.query)) {
                 //Selects all columns that match the inner join condition, 2nd select is a subquery that returns row count as result_count
-                const queryString = `SELECT job.id, job.name, job.email, job.contact_no, job.age, job.gender,
-                                    job.qualification, job.status, job.skills, job.experience, job.resume,
-                                    job.description, job.designation,
-                                    addr.street, addr.landmark, addr.zipcode, addr.city, addr.state, addr.country,
-                                    (SELECT COUNT(*) FROM job_seeker) AS result_count
-                                    FROM job_seeker AS job
-                                    INNER JOIN address as addr ON job.id = addr.parent_id
-                                    LIMIT ${limit} OFFSET ${offset}`;
+                const queryString = `SELECT   job.id, job.name, job.email, job.contact_no, job.age, job.gender,
+                                      job.qualification, job.status, job.skills, job.experience, job.resume,
+                                      job.description, job.designation,
+                                      addr.street, addr.landmark, addr.zipcode, addr.city, addr.state, addr.country,
+                                      (SELECT COUNT(*) FROM job_seeker) AS result_count
+                                      FROM job_seeker AS job
+                                      INNER  JOIN address as addr ON job.id = addr.parent_id
+                                      WHERE parent = 'job_seeker'
+                                      LIMIT ${limit} OFFSET ${offset}`;
                 Utility.executeQuery(queryString)
                     .then(data => {
                         data ?
@@ -188,7 +189,7 @@ const JobSeekerController = {
                                     (SELECT COUNT(*) FROM job_seeker WHERE ${skillParam} ${genderParam} ${experienceParam}) AS result_count
                                     FROM job_seeker AS job
                                     INNER JOIN address as addr ON job.id = addr.parent_id
-                                    WHERE ${skillParam} ${genderParam} ${experienceParam}
+                                    WHERE ${skillParam} ${genderParam} ${experienceParam} and parent = 'job_seeker'
                                     LIMIT ${limit} OFFSET ${offset}`;
                 Utility.executeQuery(queryString)
                     .then(data => {

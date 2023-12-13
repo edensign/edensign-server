@@ -112,7 +112,7 @@ const Utility = {
                             req.body.userId = decoded.id;
                             resolve(next());
                         } catch (err) {
-                            resolve(res.status(500).send(Utility.formatResponse(500, `Failed To Authenticate Token`)));
+                            resolve(res.status(200).send(Utility.formatResponse(200, `Failed To Authenticate Token`)));
                         };
                     });
                 }
