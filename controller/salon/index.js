@@ -106,22 +106,71 @@ const salonController = {
     /** Get all the salons & their associated addresses by performing left outer join on both tables
      */
     getSalonList: (req, res) => {
+
+        function isObjectEmpty(obj) {
+            return Object.keys(obj).length === 0;
+        }
+        console.log("query=>", req.query)
+
         return new Promise(async (resolve, reject) => {
-            const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
-                                    address.street, address.landmark
-                                    FROM salon 
+            if (isObjectEmpty(req.query)) {
+                const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
+                                    salon.is_featured, salon.is_franchise, address.street, address.landmark
+                                    FROM salon
                                     INNER JOIN address ON salon.id = address.parent_id
                                     ORDER BY salon.priority`;
-            Utility.executeQuery(queryString)
-                .then(data => {
-                    data ?
-                        resolve(res.status(200).send(Utility.formatResponse(200, data)))
-                        :
-                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
+                Utility.executeQuery(queryString)
+                    .then(data => {
+                        console.log('DATATATATTA', data);
+                        data ?
+                            resolve(res.status(200).send(Utility.formatResponse(200, data)))
+                            :
+                            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                    })
+                    .catch(err => {
+                        reject(res.status(500).send(Utility.formatResponse(500, err)));
+                    });
+            } else {
+                let featuredParam = req.query.is_featured ? `is_featured=${true}` : '';
+                let franchiseParam = req.query.is_franchise ? `salon.is_franchise=${true}` : '';
+                let genderParam = req.query.gender ? `type='${req.query.gender}'` : '';
+
+                if (featuredParam && (franchiseParam || genderParam)) {
+                    featuredParam += " AND";
+                }
+
+                if (franchiseParam && genderParam) {
+                    genderParam += " AND";
+                }
+
+                // Create a condition string based on genderParam and categoryParam
+                // let conditionString = '';
+                // if (genderParam || categoryParam) {
+                //     conditionString = `WHERE ${genderParam} ${genderParam && categoryParam ? 'AND' : ''} ${categoryParam}`;
+                // }
+
+                console.log('Gender Param:', genderParam);
+                console.log('featuredParam :', featuredParam);
+                console.log('franchiseParam:', franchiseParam);
+
+                const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
+                                        salon.is_featured, salon.is_franchise, address.street, address.landmark,
+                                        (SELECT COUNT(*) FROM salon WHERE ${featuredParam} ${genderParam} ${franchiseParam} ) AS result_count
+                                        FROM salon
+                                        INNER JOIN address ON salon.id = address.parent_id
+                                        WHERE ${featuredParam} ${genderParam} ${franchiseParam}
+                                        ORDER BY salon.priority`;
+                Utility.executeQuery(queryString)
+                    .then(data => {
+                        data ?
+                            resolve(res.status(200).send(Utility.formatResponse(200, data)))
+                            :
+                            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                    })
+                    .catch(err => {
+                        reject(res.status(500).send(Utility.formatResponse(500, err)));
+                    });
+            }
         });
     },
     /** Get the salons, their associated addresses & their images by performing join on multiple tables

@@ -16,14 +16,15 @@ const commonController = require("../../controller/common");
 const countryController = require("../../controller/country");
 const imageController = require("../../controller/image");
 const JobSeekerController = require("../../controller/jobSeeker");
+const productController = require("../../controller/product");
+const productImageController = require("../../controller/productImage");
 const salonController = require("../../controller/salon");
 const salonEmployeeController = require("../../controller/salonEmployee");
 const serviceController = require("../../controller/service");
+const skillController = require("../../controller/skill");
 const stateController = require("../../controller/state");
 const userController = require("../../controller/user");
 const { verifyToken, formatResponse } = require("../../utility");
-const skillController = require("../../controller/skill");
-const SkillController = require("../../controller/skill");
 
 const router = express.Router();
 
@@ -61,6 +62,25 @@ router.post('/upload-image', verifyToken, imageController.uploadImage);
 router.patch('/update-image', verifyToken, imageController.updateImage);
 router.delete('/delete-image', verifyToken, imageController.deleteImage);
 
+//------------------------------------JOB_SEEKER---------------------------------------
+router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);  //using mysql JOIN
+router.get('/get-job-seeker-detail/:page/:size', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
+router.post('/create-job-seeker', verifyToken, JobSeekerController.createJobSeeker);
+router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSeeker);
+
+//-----------------------------------PRODUCT-------------------------------------------
+router.get('/get-products', verifyToken, productController.getProducts);
+router.get('/get-product-list', verifyToken, productController.getProductList);   //using mysql JOIN
+router.post('/create-product', verifyToken, productController.createProduct);
+router.patch('/update-product', verifyToken, productController.updateProduct);
+
+//-----------------------------------PRODUCT_IMAGE--------------------------------------
+router.get('/get-product-image/:parent_id', verifyToken, productImageController.getProductImage);
+router.post('/create-product-image', verifyToken, productImageController.create);
+router.post('/upload-product-image', verifyToken, productImageController.uploadProductImage);
+router.patch('/update-product-image', verifyToken, productImageController.updateProductImage);
+router.delete('/delete-product-image', verifyToken, productImageController.deleteProductImage);
+
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);
 router.get('/get-salon-list', verifyToken, salonController.getSalonList);   //using mysql JOIN
@@ -74,12 +94,6 @@ router.get('/get-by-id/:salon_id', verifyToken, salonEmployeeController.getBySal
 router.post('/create-salon-employee', verifyToken, salonEmployeeController.createSalonEmployee);
 router.patch('/update-salon-employee', verifyToken, salonEmployeeController.updateSalonEmployee);
 router.post('/get-salon-employee', verifyToken, salonEmployeeController.getSalonEmployee);   //using mysql JOIN
-
-//------------------------------------JOB_SEEKER---------------------------------------
-router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);  //using mysql JOIN
-router.get('/get-job-seeker-detail/:page/:size', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
-router.post('/create-job-seeker', verifyToken, JobSeekerController.createJobSeeker);
-router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSeeker);
 
 //-----------------------------------SERVICE-------------------------------------------
 router.get('/get-services', verifyToken, serviceController.getAll);
