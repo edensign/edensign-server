@@ -182,13 +182,14 @@ const salonController = {
                 images: []
             };
             const salon_code = req.body.code;
-            console.log(req.body.code, typeof (req.body.code))
+            console.log('req.body', req.body)
             const queryString = `SELECT sa.*, 
                                     address.street, address.landmark, images.image_src
                                     FROM salon sa
                                     LEFT OUTER JOIN address ON sa.id = address.parent_id 
                                     LEFT OUTER JOIN images ON  sa.id = images.parent_id
-                                    WHERE sa.salon_code = '${salon_code}' ORDER BY images.priority`;
+                                    WHERE sa.salon_code = '${salon_code}'
+                                    ORDER BY images.priority`;
 
             Utility.executeQuery(queryString)
                 .then(response => {

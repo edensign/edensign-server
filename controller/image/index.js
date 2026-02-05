@@ -28,7 +28,7 @@ const ImageController = {
                         resolve(res.status(200).send(Utility.formatResponse(200, data)));
                 })
                 .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                    resolve(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     },
@@ -57,7 +57,7 @@ const ImageController = {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
                 })
                 .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                    resolve(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     },
@@ -70,22 +70,23 @@ const ImageController = {
                     resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
                 })
                 .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                    resolve(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     },
+
+    // Utility.uploadingImageToAzure(req.body.folder, req.files.file.data, req.body.name)
     /** Upload image to abs
     */
     uploadImage: (req, res) => {
-        return new Promise((resolve, reject) => {
-            Utility.uploadingImageToAzure(req.body.folder, req.files.file.data, req.body.name)
-                .then(upload => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Uploaded Successfully`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+        try {
+            const { document } = req.files;
+            const { folder } = req.body;
+            Utility.uploadToS3(folder, document, res)
+        } catch (err) {
+            console.log("err", err);
+            res.status(500).send(Utility.formatResponse(500, err));
+        }
     }
 };
 
