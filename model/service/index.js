@@ -23,6 +23,9 @@ const ServiceModel = sequelize.define(
         default_image: {
             type: Sequelize.STRING
         },
+        price: {
+            type: Sequelize.FLOAT
+        },
         status: {
             type: Sequelize.ENUM,
             values: ['active', 'inactive']

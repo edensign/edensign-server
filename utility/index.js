@@ -8,6 +8,9 @@
 
 const bcrypt = require("bcryptjs");
 const { BlobServiceClient } = require("@azure/storage-blob");
+
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+
 const jwt = require("jsonwebtoken");
 const Sequelize = require("sequelize");
 
@@ -16,6 +19,11 @@ const sequelize = require("../sequelize");
 
 const salt = config.SALT;
 const secret = config.SECRET;
+const bucketName = config.BUCKET;
+const region = config.REGION;
+const accessKey = config.ACCESS_KEY;
+const secretKey = config.SECRET_KEY;
+
 const sasURL = config.IMAGE_CONTAINER_SAS_URL;
 
 const blobServiceClient = new BlobServiceClient(sasURL);
@@ -174,6 +182,45 @@ const Utility = {
     executeQuery: (queryString) => {
         return sequelize.query(queryString, { type: Sequelize.QueryTypes.SELECT });
     },
+
+    // upload the document to aws s3 bucket
+    uploadToS3: async (folder, file, res) => {
+        console.log('folder', folder, file);
+        // Initialize an S3 client instance
+        const s3Client = new S3Client({
+            region: region,
+            credentials: {
+                accessKeyId: accessKey,
+                secretAccessKey: secretKey,
+            },
+        });
+
+        // Set the parameters for the file you want to upload
+        const params = {
+            Bucket: bucketName,
+            Key: folder,
+            Body: file.data,
+            ContentType: file.mimetype,
+        };
+
+        try {
+            // Upload the file to S3 using the PutObjectCommand
+            const data = await s3Client.send(new PutObjectCommand(params));
+            console.log("data", data)
+
+            // The uploaded file URL will need to be manually constructed since v3 doesn't directly return a location
+            const fileLocation = `https://${bucketName}.s3.${region}.amazonaws.com/${folder}`;
+
+            console.log('File uploaded successfully. File location:', fileLocation);
+            return res.status(200).send(Utility.formatResponse(200, fileLocation));
+        } catch (err) {
+            console.log('Error uploading file:', err);
+            return res.status(500).send(
+                Utility.formatResponse(500, 'Error occurred while uploading the file')
+            );
+        }
+    },
+
     /**
      * Upload image to azure blob storage
      * @param {Buffer} file

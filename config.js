@@ -23,6 +23,11 @@ module.exports = {
     DB_PASSWORD: process.env.DB_PASSWORD || '',
     SECRET: process.env.SECRET || "EdEn@@#12sIgN",
     SALT: process.env.SALT || 16,
+    ACCESS_KEY: process.env.AWS_ACCESS_KEY_ID,
+    SECRET_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    REGION: process.env.AWS_REGION,
+    BUCKET: process.env.AWS_BUCKET_NAME,
+
     IMAGE_CONTAINER_SAS_URL: process.env.IMAGE_CONTAINER_SAS_URL || "https://edensign1.blob.core.windows.net/image-storage?sp=racwdl&st=2023-11-08T06:00:11Z&se=2024-03-16T14:00:11Z&sv=2022-11-02&sr=c&sig=jUD8G%2F4U%2FxKUuYF4AMpBhL1Nw5zHzGdwGHqeHaxPd5g%3D"
 };
 
