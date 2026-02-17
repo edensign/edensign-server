@@ -28,6 +28,9 @@ const AppointmentModel = sequelize.define(
         booked_for: {
             type: Sequelize.ENUM,
             values: ['self', 'kid', 'boy', 'girl', 'man', 'woman', 'senior_citizen']
+        },
+        customer_id: {
+            type: Sequelize.INTEGER
         }
     },
     {

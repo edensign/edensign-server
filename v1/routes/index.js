@@ -24,9 +24,27 @@ const serviceController = require("../../controller/service");
 const skillController = require("../../controller/skill");
 const stateController = require("../../controller/state");
 const userController = require("../../controller/user");
+const appointmentController = require("../../controller/appointment");
+const contactUsController = require("../../controller/contactUs");
+const customerController = require("../../controller/customer");
+const reviewController = require("../../controller/review");
 const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
+
+//-----------------------------------CUSTOMER-----------------------------------
+router.post('/customer/register', customerController.register);
+router.post('/customer/login', customerController.login);
+router.get('/customer/profile', verifyToken, customerController.getProfile);
+
+//-----------------------------------APPOINTMENT-----------------------------------
+router.post('/get-booked-slots', appointmentController.getBookedSlots);
+router.post('/create-appointment', verifyToken, appointmentController.createAppointment);
+router.get('/get-appointments', verifyToken, appointmentController.getAppointments);
+
+//-----------------------------------CONTACT US-----------------------------------
+router.post('/create-contact', contactUsController.createContact);
+router.get('/get-contacts', verifyToken, contactUsController.getContacts);
 
 //-----------------------------------ADDRESS---------------------------------------
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);
@@ -74,6 +92,10 @@ router.get('/get-product-list', verifyToken, productController.getProductList); 
 router.post('/create-product', verifyToken, productController.createProduct);
 router.patch('/update-product', verifyToken, productController.updateProduct);
 
+//-----------------------------------INVENTORY-------------------------------------------
+router.get('/get-inventory', verifyToken, productController.getInventory);
+router.patch('/update-inventory', verifyToken, productController.updateInventory);
+
 //-----------------------------------PRODUCT_IMAGE--------------------------------------
 router.get('/get-product-image/:parent_id', verifyToken, productImageController.getProductImage);
 router.post('/create-product-image', verifyToken, productImageController.create);
@@ -120,6 +142,10 @@ router.get('/get-agreement', verifyToken, userController.getAgreement);
 router.post('/register', verifyToken, userController.register);
 router.post('/login', userController.login);
 router.patch('/update-user', verifyToken, userController.updateUser);
+
+//-----------------------------------REVIEW-----------------------------------
+router.post('/create-review', reviewController.createReview);
+router.get('/get-reviews/:salon_id', reviewController.getReviewsBySalon);
 
 
 module.exports = router;
