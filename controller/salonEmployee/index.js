@@ -22,7 +22,8 @@ const SalonEmployeeController = {
                         resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
                 })
                 .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                    console.log("Error fetching salon employee:", err);
+                    resolve(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
     },
@@ -64,7 +65,7 @@ const SalonEmployeeController = {
     getSalonEmployee: (req, res) => {
         return new Promise((resolve, reject) => {
             const service_id = req.body.service_id;
-            const queryString = `SELECT se.id, se.name, salon.services FROM salon_employee  se
+            const queryString = `SELECT se.id, se.name, se.slots, salon.services FROM salon_employee  se
                                     LEFT OUTER JOIN salon ON se.salon_id = salon.id
                                     WHERE salon.salon_code = '${req.body.code}'
                                     AND FIND_IN_SET('${service_id}', REPLACE(se.services, ', ',','))`;

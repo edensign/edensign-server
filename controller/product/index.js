@@ -113,6 +113,75 @@ const productController = {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         })
+    },
+    /** Get inventory data - products with stock information
+     */
+    getInventory: (req, res) => {
+        const { page, size, search } = req.query;
+        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+
+        return new Promise((resolve, reject) => {
+            let searchCond = {};
+            if (search) {
+                searchCond = {
+                    [Op.or]: [
+                        {
+                            name: {
+                                [Op.like]: `%${search}%`
+                            }
+                        },
+                        {
+                            sku: {
+                                [Op.like]: `%${search}%`
+                            }
+                        },
+                        {
+                            brand: {
+                                [Op.like]: `%${search}%`
+                            }
+                        }
+                    ]
+                };
+            }
+            ProductModel.findAndCountAll({
+                limit, offset,
+                where: { ...searchCond },
+                attributes: ['id', 'name', 'brand', 'sku', 'stock_quantity', 'low_stock_threshold', 'status', 'updated_at'],
+                order: [
+                    ["updated_at", "DESC"]
+                ]
+            })
+                .then(list => {
+                    const { count, rows } = list;
+                    (count > 0) ?
+                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
+                        :
+                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
+    },
+    /** Update inventory stock for a product
+     */
+    updateInventory: (req, res) => {
+        return new Promise((resolve, reject) => {
+            const { id, stock_quantity, low_stock_threshold, sku } = req.body;
+            const updateData = { updated_by: req.body.userId };
+
+            if (stock_quantity !== undefined) updateData.stock_quantity = stock_quantity;
+            if (low_stock_threshold !== undefined) updateData.low_stock_threshold = low_stock_threshold;
+            if (sku !== undefined) updateData.sku = sku;
+
+            ProductModel.update(updateData, { where: { id } })
+                .then(updatedData => {
+                    resolve(res.status(200).send(Utility.formatResponse(200, `Inventory Updated Successfully`)));
+                })
+                .catch(err => {
+                    reject(res.status(500).send(Utility.formatResponse(500, err)));
+                });
+        });
     }
 };
 

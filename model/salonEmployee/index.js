@@ -53,6 +53,9 @@ const SalonEmployeeModel = sequelize.define(
         },
         updated_by: {
             type: Sequelize.INTEGER
+        },
+        slots: {
+            type: Sequelize.JSON
         }
     },
     {

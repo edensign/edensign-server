@@ -49,6 +49,18 @@ const ProductModel = sequelize.define(
             type: Sequelize.ENUM,
             values: ['active', 'inactive']
         },
+        stock_quantity: {
+            type: Sequelize.INTEGER,
+            defaultValue: 0
+        },
+        low_stock_threshold: {
+            type: Sequelize.INTEGER,
+            defaultValue: 10
+        },
+        sku: {
+            type: Sequelize.STRING,
+            unique: true
+        },
         created_at: {
             type: 'TIMESTAMP'
         },

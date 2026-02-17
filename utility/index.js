@@ -107,25 +107,28 @@ const Utility = {
      */
     verifyToken: (req, res, next) => {
         return new Promise((resolve, reject) => {
+            const token = req.headers['x-access-token'];
 
-            const type = req.headers['type'];
-            if (type === "admin") {
-                const token = req.headers['x-access-token'];
-                if (!token) {
+            if (!token) {
+                // No token provided - for protected routes, reject
+                const type = req.headers['type'];
+                if (type === "admin") {
                     resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
-                }
-                else {
-                    jwt.verify(token, secret, (err, decoded) => {
-                        try {
-                            req.body.userId = decoded.id;
-                            resolve(next());
-                        } catch (err) {
-                            resolve(res.status(200).send(Utility.formatResponse(200, `Failed To Authenticate Token`)));
-                        };
-                    });
+                } else {
+                    // For non-admin routes, allow but without userId
+                    resolve(next());
                 }
             } else {
-                resolve(next());
+                // Token provided - verify it and set userId
+                jwt.verify(token, secret, (err, decoded) => {
+                    if (err) {
+                        resolve(res.status(401).send(Utility.formatResponse(401, `Failed To Authenticate Token`)));
+                    } else {
+                        req.userId = decoded.id;  // Set userId from token
+                        req.body.userId = decoded.id;  // Also set in body for backwards compatibility
+                        resolve(next());
+                    }
+                });
             }
         });
     },
