@@ -28,6 +28,7 @@ const appointmentController = require("../../controller/appointment");
 const contactUsController = require("../../controller/contactUs");
 const customerController = require("../../controller/customer");
 const reviewController = require("../../controller/review");
+const cashflowController = require("../../controller/cashflow");
 const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
@@ -111,6 +112,10 @@ router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
 router.post('/create-salon', verifyToken, salonController.createSalon);
 router.patch('/update-salon', verifyToken, salonController.updateSalon);
 
+//-----------------------------------SALON INVENTORY-------------------------------------------
+router.get('/get-salon-inventory', verifyToken, salonController.getSalonInventory);
+router.patch('/update-salon-inventory', verifyToken, salonController.updateSalonInventory);
+
 //----------------------------------SALON_EMPLOYEE-------------------------------------
 router.get('/get-by-id/:salon_id', verifyToken, salonEmployeeController.getBySalonId);
 router.post('/create-salon-employee', verifyToken, salonEmployeeController.createSalonEmployee);
@@ -146,6 +151,15 @@ router.patch('/update-user', verifyToken, userController.updateUser);
 //-----------------------------------REVIEW-----------------------------------
 router.post('/create-review', reviewController.createReview);
 router.get('/get-reviews/:salon_id', reviewController.getReviewsBySalon);
+
+
+//-----------------------------------CASHFLOW-----------------------------------
+router.get('/cashflow/get-all', verifyToken, cashflowController.getAll);
+router.post('/cashflow/create', verifyToken, cashflowController.create);
+router.patch('/cashflow/update', verifyToken, cashflowController.update);
+router.delete('/cashflow/delete', verifyToken, cashflowController.delete);
+router.get('/cashflow/summary', verifyToken, cashflowController.getSummary);
+router.get('/cashflow/get-by-id/:id', verifyToken, cashflowController.getById);
 
 
 module.exports = router;

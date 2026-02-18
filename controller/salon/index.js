@@ -211,6 +211,72 @@ const salonController = {
                     reject(res.status(500).send(Utility.formatResponse(500, err)));
                 });
         });
+    },
+    /** Get salon inventory data - salons with stock information
+     */
+    getSalonInventory: (req, res) => {
+        const { page, size, search } = req.query;
+        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+
+        let searchCond = {};
+        if (search) {
+            searchCond = {
+                [Op.or]: [
+                    {
+                        name: {
+                            [Op.like]: `%${search}%`
+                        }
+                    },
+                    {
+                        sku: {
+                            [Op.like]: `%${search}%`
+                        }
+                    },
+                    {
+                        salon_code: {
+                            [Op.like]: `%${search}%`
+                        }
+                    }
+                ]
+            };
+        }
+        SalonModel.findAndCountAll({
+            limit, offset,
+            where: { ...searchCond },
+            attributes: ['id', 'name', 'salon_code', 'sku', 'stock_quantity', 'low_stock_threshold', 'status', 'type', 'area', 'updated_at'],
+            order: [
+                ["updated_at", "DESC"]
+            ]
+        })
+            .then(list => {
+                const { count, rows } = list;
+                if (count > 0) {
+                    res.status(200).send(Utility.formatResponse(200, { count, rows }));
+                } else {
+                    res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+                }
+            })
+            .catch(err => {
+                res.status(500).send(Utility.formatResponse(500, err));
+            });
+    },
+    /** Update salon inventory stock
+     */
+    updateSalonInventory: (req, res) => {
+        const { id, stock_quantity, low_stock_threshold, sku } = req.body;
+        const updateData = { updated_by: req.body.userId };
+
+        if (stock_quantity !== undefined) updateData.stock_quantity = stock_quantity;
+        if (low_stock_threshold !== undefined) updateData.low_stock_threshold = low_stock_threshold;
+        if (sku !== undefined) updateData.sku = sku;
+
+        SalonModel.update(updateData, { where: { id } })
+            .then(updatedData => {
+                res.status(200).send(Utility.formatResponse(200, `Salon Inventory Updated Successfully`));
+            })
+            .catch(err => {
+                res.status(500).send(Utility.formatResponse(500, err));
+            });
     }
 }
 
