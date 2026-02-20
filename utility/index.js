@@ -161,6 +161,9 @@ const Utility = {
             case 'product':
                 model = require("../model/product");
                 break;
+            case 'salon_inventory_product':
+                model = require("../model/salonInventoryProduct");
+                break;
             default:
                 break;
         };

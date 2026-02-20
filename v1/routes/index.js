@@ -42,6 +42,7 @@ router.get('/customer/profile', verifyToken, customerController.getProfile);
 router.post('/get-booked-slots', appointmentController.getBookedSlots);
 router.post('/create-appointment', verifyToken, appointmentController.createAppointment);
 router.get('/get-appointments', verifyToken, appointmentController.getAppointments);
+router.get('/get-kanban-slots', verifyToken, appointmentController.getKanbanSlots);
 
 //-----------------------------------CONTACT US-----------------------------------
 router.post('/create-contact', contactUsController.createContact);
@@ -160,6 +161,15 @@ router.patch('/cashflow/update', verifyToken, cashflowController.update);
 router.delete('/cashflow/delete', verifyToken, cashflowController.delete);
 router.get('/cashflow/summary', verifyToken, cashflowController.getSummary);
 router.get('/cashflow/get-by-id/:id', verifyToken, cashflowController.getById);
+
+
+const salonInventoryController = require("../../controller/salonInventory");
+
+//-----------------------------------SALON INVENTORY (PRODUCT STOCK)-------------------------------------------
+router.get('/salon-inventory/get-all', verifyToken, salonInventoryController.getInventory);
+router.post('/salon-inventory/create', verifyToken, salonInventoryController.createProduct);
+router.patch('/salon-inventory/update', verifyToken, salonInventoryController.updateProduct);
+router.patch('/salon-inventory/update-stock', verifyToken, salonInventoryController.updateStock);
 
 
 module.exports = router;
