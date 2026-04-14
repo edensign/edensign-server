@@ -22,7 +22,7 @@ module.exports = {
     DB_USERNAME: process.env.DB_USERNAME || 'root',
     DB_PASSWORD: process.env.DB_PASSWORD || '',
     SECRET: process.env.SECRET || "EdEn@@#12sIgN",
-    SALT: process.env.SALT || 16,
+    SALT: process.env.SALT || 10,
     ACCESS_KEY: process.env.AWS_ACCESS_KEY_ID,
     SECRET_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     REGION: process.env.AWS_REGION,

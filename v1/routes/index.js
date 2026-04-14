@@ -29,6 +29,10 @@ const contactUsController = require("../../controller/contactUs");
 const customerController = require("../../controller/customer");
 const reviewController = require("../../controller/review");
 const cashflowController = require("../../controller/cashflow");
+const authController = require("../../controller/auth");
+const orderController = require("../../controller/order");
+const bannerController = require("../../controller/banner");
+const offerController = require("../../controller/offer");
 const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
@@ -171,5 +175,35 @@ router.post('/salon-inventory/create', verifyToken, salonInventoryController.cre
 router.patch('/salon-inventory/update', verifyToken, salonInventoryController.updateProduct);
 router.patch('/salon-inventory/update-stock', verifyToken, salonInventoryController.updateStock);
 
+// =================================== MOBILE APP ===================================
+// AUTH
+router.post('/auth/register', authController.register);
+router.post('/auth/login', authController.login);
+router.patch('/users/profile', verifyToken, authController.updateProfile);
+
+// SALONS (Wrapping existing paths or creating aliases)
+router.get('/salons', salonController.getSalons); // Query params can be handled in controller logic if supported
+router.get('/salons/:id', salonController.getSalonDetail);
+router.get('/salons/:salon_id/staff', verifyToken, salonEmployeeController.getBySalonId);
+router.get('/salons/:id/slots', appointmentController.getBookedSlots); 
+router.get('/salons/:salon_id/reviews', reviewController.getReviewsBySalon);
+
+// APPOINTMENTS
+router.post('/appointments', verifyToken, appointmentController.createAppointment);
+router.get('/appointments/my', verifyToken, appointmentController.getAppointments);
+
+// PRODUCTS
+router.get('/products', productController.getProducts); // using getProducts
+router.get('/products/:id', productController.getProducts); // Can pass id later
+
+// ORDERS
+router.post('/orders', verifyToken, orderController.createOrder);
+router.get('/orders/my', verifyToken, orderController.getMyOrders);
+
+// HOME / DISCOVERY
+router.get('/banners', bannerController.getBanners);
+router.get('/offers', offerController.getOffers);
+router.get('/services/popular', serviceController.getAll);
+router.get('/cities', cityController.getAll);
 
 module.exports = router;

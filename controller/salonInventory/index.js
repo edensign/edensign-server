@@ -86,7 +86,7 @@ const SalonInventoryController = {
     /** Create a new product for salon inventory
      */
     createProduct: async (req, res) => {
-        const { name, brand, stock_quantity, low_stock_threshold, sku, salonId } = req.body;
+        const { name, brand, stock_quantity, low_stock_threshold, sku, salonId, usage_per_client } = req.body;
 
         let targetSalonId = salonId;
 
@@ -107,6 +107,7 @@ const SalonInventoryController = {
                 brand,
                 stock_quantity: stock_quantity || 0,
                 low_stock_threshold: low_stock_threshold || 10,
+                usage_per_client: usage_per_client || 0,
                 sku,
                 created_by: req.userId,
                 status: 'active'
@@ -122,7 +123,7 @@ const SalonInventoryController = {
     /** Update stock or product details
      */
     updateProduct: async (req, res) => {
-        const { id, name, brand, stock_quantity, low_stock_threshold, sku, status } = req.body;
+        const { id, name, brand, stock_quantity, low_stock_threshold, sku, status, usage_per_client } = req.body;
         const userId = req.userId;
 
         try {
@@ -137,7 +138,7 @@ const SalonInventoryController = {
 
             await SalonInventoryProductModel.update(
                 {
-                    name, brand, stock_quantity, low_stock_threshold, sku, status,
+                    name, brand, stock_quantity, low_stock_threshold, sku, status, usage_per_client,
                     updated_at: new Date()
                 },
                 { where: { id } }

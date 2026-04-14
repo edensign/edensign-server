@@ -107,7 +107,15 @@ const Utility = {
      */
     verifyToken: (req, res, next) => {
         return new Promise((resolve, reject) => {
-            const token = req.headers['x-access-token'];
+            let token = req.headers['x-access-token'];
+
+            // Check for Bearer token if x-access-token is missing (common for mobile apps)
+            if (!token && req.headers['authorization']) {
+                const authHeader = req.headers['authorization'];
+                if (authHeader.startsWith('Bearer ')) {
+                    token = authHeader.substring(7);
+                }
+            }
 
             if (!token) {
                 // No token provided - for protected routes, reject
@@ -175,10 +183,12 @@ const Utility = {
      * @param {Integer} size
      * @return {Object} object containing limit and offset
      */
-    getPagination: (page = 0, size = 5) => {
-        let limit = size;
-        let offset = page * size;
-        return { limit, offset }
+    getPagination: (page, size) => {
+        let _page = (page !== undefined && !Number.isNaN(page) && page >= 0) ? page : 0;
+        let _size = (size !== undefined && !Number.isNaN(size) && size > 0) ? size : 100;
+        let limit = _size;
+        let offset = _page * _size;
+        return { limit, offset };
     },
     /**
      * Format sql query by adding type attribute

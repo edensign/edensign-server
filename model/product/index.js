@@ -50,11 +50,11 @@ const ProductModel = sequelize.define(
             values: ['active', 'inactive']
         },
         stock_quantity: {
-            type: Sequelize.INTEGER,
+            type: Sequelize.DOUBLE,
             defaultValue: 0
         },
         low_stock_threshold: {
-            type: Sequelize.INTEGER,
+            type: Sequelize.DOUBLE,
             defaultValue: 10
         },
         sku: {

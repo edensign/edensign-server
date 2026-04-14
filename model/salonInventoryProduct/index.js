@@ -21,12 +21,16 @@ const SalonInventoryProductModel = sequelize.define(
             allowNull: false
         },
         stock_quantity: {
-            type: Sequelize.INTEGER,
+            type: Sequelize.DOUBLE,
             defaultValue: 0
         },
         low_stock_threshold: {
-            type: Sequelize.INTEGER,
+            type: Sequelize.DOUBLE,
             defaultValue: 10
+        },
+        usage_per_client: {
+            type: Sequelize.DOUBLE,
+            defaultValue: 0 // Weight units used per client
         },
         sku: {
             type: Sequelize.STRING,
