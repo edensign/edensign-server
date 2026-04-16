@@ -15,14 +15,14 @@ dotenv.config({
 
 module.exports = {
     NODE_ENV: process.env.NODE_ENV || 'local',
-    PORT: process.env.PORT || 8080,
+    PORT: parseInt(process.env.PORT) || 8080,
     HOST: process.env.HOST || 'localhost',
     DB: process.env.DB || 'eden-sign',
-    DB_PORT: process.env.DB_PORT || 3306,
+    DB_PORT: parseInt(process.env.DB_PORT) || 3306,
     DB_USERNAME: process.env.DB_USERNAME || 'root',
     DB_PASSWORD: process.env.DB_PASSWORD || '',
     SECRET: process.env.SECRET || "EdEn@@#12sIgN",
-    SALT: process.env.SALT || 10,
+    SALT: parseInt(process.env.SALT) || 10,
     ACCESS_KEY: process.env.AWS_ACCESS_KEY_ID,
     SECRET_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     REGION: process.env.AWS_REGION,
