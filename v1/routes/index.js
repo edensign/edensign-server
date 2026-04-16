@@ -28,6 +28,11 @@ const appointmentController = require("../../controller/appointment");
 const contactUsController = require("../../controller/contactUs");
 const customerController = require("../../controller/customer");
 const reviewController = require("../../controller/review");
+const cashflowController = require("../../controller/cashflow");
+const authController = require("../../controller/auth");
+const orderController = require("../../controller/order");
+const bannerController = require("../../controller/banner");
+const offerController = require("../../controller/offer");
 const { verifyToken, formatResponse } = require("../../utility");
 
 const router = express.Router();
@@ -41,6 +46,7 @@ router.get('/customer/profile', verifyToken, customerController.getProfile);
 router.post('/get-booked-slots', appointmentController.getBookedSlots);
 router.post('/create-appointment', verifyToken, appointmentController.createAppointment);
 router.get('/get-appointments', verifyToken, appointmentController.getAppointments);
+router.get('/get-kanban-slots', verifyToken, appointmentController.getKanbanSlots);
 
 //-----------------------------------CONTACT US-----------------------------------
 router.post('/create-contact', contactUsController.createContact);
@@ -111,6 +117,10 @@ router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
 router.post('/create-salon', verifyToken, salonController.createSalon);
 router.patch('/update-salon', verifyToken, salonController.updateSalon);
 
+//-----------------------------------SALON INVENTORY-------------------------------------------
+router.get('/get-salon-inventory', verifyToken, salonController.getSalonInventory);
+router.patch('/update-salon-inventory', verifyToken, salonController.updateSalonInventory);
+
 //----------------------------------SALON_EMPLOYEE-------------------------------------
 router.get('/get-by-id/:salon_id', verifyToken, salonEmployeeController.getBySalonId);
 router.post('/create-salon-employee', verifyToken, salonEmployeeController.createSalonEmployee);
@@ -147,5 +157,53 @@ router.patch('/update-user', verifyToken, userController.updateUser);
 router.post('/create-review', reviewController.createReview);
 router.get('/get-reviews/:salon_id', reviewController.getReviewsBySalon);
 
+
+//-----------------------------------CASHFLOW-----------------------------------
+router.get('/cashflow/get-all', verifyToken, cashflowController.getAll);
+router.post('/cashflow/create', verifyToken, cashflowController.create);
+router.patch('/cashflow/update', verifyToken, cashflowController.update);
+router.delete('/cashflow/delete', verifyToken, cashflowController.delete);
+router.get('/cashflow/summary', verifyToken, cashflowController.getSummary);
+router.get('/cashflow/get-by-id/:id', verifyToken, cashflowController.getById);
+
+
+const salonInventoryController = require("../../controller/salonInventory");
+
+//-----------------------------------SALON INVENTORY (PRODUCT STOCK)-------------------------------------------
+router.get('/salon-inventory/get-all', verifyToken, salonInventoryController.getInventory);
+router.post('/salon-inventory/create', verifyToken, salonInventoryController.createProduct);
+router.patch('/salon-inventory/update', verifyToken, salonInventoryController.updateProduct);
+router.patch('/salon-inventory/update-stock', verifyToken, salonInventoryController.updateStock);
+
+// =================================== MOBILE APP ===================================
+// AUTH
+router.post('/auth/register', authController.register);
+router.post('/auth/login', authController.login);
+router.patch('/users/profile', verifyToken, authController.updateProfile);
+
+// SALONS (Wrapping existing paths or creating aliases)
+router.get('/salons', salonController.getSalons); // Query params can be handled in controller logic if supported
+router.get('/salons/:id', salonController.getSalonDetail);
+router.get('/salons/:salon_id/staff', verifyToken, salonEmployeeController.getBySalonId);
+router.get('/salons/:id/slots', appointmentController.getBookedSlots); 
+router.get('/salons/:salon_id/reviews', reviewController.getReviewsBySalon);
+
+// APPOINTMENTS
+router.post('/appointments', verifyToken, appointmentController.createAppointment);
+router.get('/appointments/my', verifyToken, appointmentController.getAppointments);
+
+// PRODUCTS
+router.get('/products', productController.getProducts); // using getProducts
+router.get('/products/:id', productController.getProducts); // Can pass id later
+
+// ORDERS
+router.post('/orders', verifyToken, orderController.createOrder);
+router.get('/orders/my', verifyToken, orderController.getMyOrders);
+
+// HOME / DISCOVERY
+router.get('/banners', bannerController.getBanners);
+router.get('/offers', offerController.getOffers);
+router.get('/services/popular', serviceController.getAll);
+router.get('/cities', cityController.getAll);
 
 module.exports = router;

@@ -18,6 +18,7 @@ const customerController = {
      */
     register: async (req, res) => {
         try {
+            console.log("Customer registration request received:", JSON.stringify(req.body, null, 2));
             const { username, password, contact_no, email } = req.body;
 
             // Validation
@@ -55,6 +56,8 @@ const customerController = {
                 created_at: new Date()
             });
 
+            console.log("Customer created successfully with ID:", customer.id);
+
             // Generate token
             const token = Utility.getSignedToken(customer.id);
 
@@ -72,9 +75,9 @@ const customerController = {
             );
 
         } catch (error) {
-            console.error("Registration error:", error);
+            console.error("Customer registration error:", error);
             return res.status(500).json(
-                Utility.formatResponse(500, "Internal server error")
+                Utility.formatResponse(500, error.message || "Internal server error")
             );
         }
     },

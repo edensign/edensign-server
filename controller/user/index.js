@@ -70,22 +70,38 @@ const userController = {
     /** Creating hash of password and a new user & assigning an Auth Token
     */
     register: (req, res) => {
+        console.log("User registration request received:", JSON.stringify(req.body, null, 2));
+        const { username, password, email, contact_no } = req.body;
+
+        if (!username || !password || !email || !contact_no) {
+            return res.status(400).send(Utility.formatResponse(400, "Username, password, email, and contact number are required"));
+        }
+
         return new Promise((resolve, reject) => {
             const payload = req.body;
             Utility.createHash(payload.password)
                 .then(hash => {
                     payload.password = hash;
+                    // Defaulting status to active for admin-created users or new registrations if desired
+                    if (!payload.status) payload.status = "active"; 
+
                     UserModel.create({ ...payload, created_by: req.body.userId })
                         .then(user => {
+                            console.log("User created successfully with ID:", user.id);
                             const token = Utility.getSignedToken(user.id);
                             resolve(res.status(200).send(Utility.formatResponse(200, { token, id: user.id })));
                         })
                         .catch(err => {
-                            resolve(res.status(409).send(Utility.formatResponse(409, `${err.errors[0].message}`)));
+                            console.error("User creation DB error:", err);
+                            const errorMessage = (err.errors && err.errors.length > 0) 
+                                ? err.errors[0].message 
+                                : (err.message || "Database error occurred");
+                            resolve(res.status(409).send(Utility.formatResponse(409, errorMessage)));
                         });
                 })
                 .catch(err => {
-                    reject(err);
+                    console.error("Hashing error:", err);
+                    resolve(res.status(500).send(Utility.formatResponse(500, "Internal server error during password encryption")));
                 });
         });
     },

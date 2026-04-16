@@ -108,6 +108,18 @@ const SalonModel = sequelize.define(
         established_on: {
             type: 'DATETIME'
         },
+        stock_quantity: {
+            type: Sequelize.DOUBLE,
+            defaultValue: 0
+        },
+        low_stock_threshold: {
+            type: Sequelize.DOUBLE,
+            defaultValue: 10
+        },
+        sku: {
+            type: Sequelize.STRING,
+            unique: true
+        },
         created_at: {
             type: 'TIMESTAMP'
         },
