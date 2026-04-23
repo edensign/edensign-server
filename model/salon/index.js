@@ -129,6 +129,9 @@ const SalonModel = sequelize.define(
         created_by: {
             type: Sequelize.INTEGER
         },
+        referral_by: {
+            type: Sequelize.INTEGER
+        },
         updated_by: {
             type: Sequelize.INTEGER
         }
@@ -138,5 +141,9 @@ const SalonModel = sequelize.define(
         freezeTableName: true
     },
 );
+
+const UserModel = require('../user');
+SalonModel.belongsTo(UserModel, { as: 'Creator', foreignKey: 'created_by' });
+SalonModel.belongsTo(UserModel, { as: 'Referrer', foreignKey: 'referral_by' });
 
 module.exports = SalonModel;

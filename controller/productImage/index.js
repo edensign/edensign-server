@@ -1,91 +1,103 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const ProductImageModel = require("../../model/productImage");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
-// const uploadingImage = require("../../utility/uploadImageToAzure");
 
 const ProductImageController = {
-    /** Get product image/images from database based on parent_id
-     */
-    getProductImage: (req, res) => {
-        return new Promise((resolve, reject) => {
-            ProductImageModel.findAll({
-                where: { parent_id: req.params.parent_id },
-                order: [
-                    ["priority", "DESC"]
-                ]
-            })
-                .then(data => {
-                    !data ?
-                        resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
-                        :
-                        resolve(res.status(200).send(Utility.formatResponse(200, data)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+    /** Get product image/images from database based on parent_id */
+    getProductImage: async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('product_image')
+                .select('*')
+                .eq('parent_id', req.params.parent_id)
+                .order('priority', { ascending: false });
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                res.status(200).send(Utility.formatResponse(200, data));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `Data Not Found`));
+            }
+        } catch (err) {
+            console.error("getProductImage error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
-    /** Create new product image
-     */
-    create: (req, res) => {
-        const payload = req.body;
-        return new Promise((resolve, reject) => {
-            ProductImageModel.create({ ...payload, created_by: req.body.userId })
-                .then(image => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Success`)));
-                })
-                .catch(err => {
-                    resolve(res.status(409).send(Utility.formatResponse(409, "Error")));
-                });
-        });
+
+    /** Create new product image */
+    create: async (req, res) => {
+        try {
+            const payload = { ...req.body, created_by: req.body.userId };
+            delete payload.userId;
+
+            const { error } = await supabase
+                .from('product_image')
+                .insert(payload);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, `Success`));
+        } catch (err) {
+            console.error("create productImage error:", err);
+            res.status(409).send(Utility.formatResponse(409, "Error"));
+        }
     },
-    /** Updating product image in the database
-     */
-    updateProductImage: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            ProductImageModel.update({ ...payload, updated_by: req.body.userId },
-                { where: { parent_id: payload.parent_id } })
-                .then(updatedData => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+    /** Updating product image in the database */
+    updateProductImage: async (req, res) => {
+        try {
+            const payload = { ...req.body, updated_by: req.body.userId, updated_at: new Date().toISOString() };
+            const parent_id = payload.parent_id;
+            delete payload.userId;
+            delete payload.parent_id;
+
+            const { error } = await supabase
+                .from('product_image')
+                .update(payload)
+                .eq('parent_id', parent_id);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, `Updated Successfully`));
+        } catch (err) {
+            console.error("updateProductImage error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
+
     /** Delete product images from the db */
-    deleteProductImage: (req, res) => {
-        return new Promise((resolve, reject) => {
+    deleteProductImage: async (req, res) => {
+        try {
             const payload = req.body;
-            ProductImageModel.destroy({ where: { parent_id: payload.parent_id } })
-                .then(deletedImage => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+            const { error } = await supabase
+                .from('product_image')
+                .delete()
+                .eq('parent_id', payload.parent_id);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`));
+        } catch (err) {
+            console.error("deleteProductImage error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
-    /** Upload product image to abs
-    */
-    uploadProductImage: (req, res) => {
-        return new Promise((resolve, reject) => {
-            Utility.uploadingImageToAzure(req.body.folder, req.files.file.data, req.body.name)
-                .then(upload => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Uploaded Successfully`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+    /** Upload product image to abs/s3 */
+    uploadProductImage: async (req, res) => {
+        try {
+            const folder = req.body.folder;
+            const name = req.body.name;
+            const file = req.files.file;
+            const fullPath = `${folder}/${name}`;
+
+            Utility.uploadToS3(fullPath, file, res);
+        } catch (err) {
+            console.error("uploadProductImage error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message || err));
+        }
     }
 };
 

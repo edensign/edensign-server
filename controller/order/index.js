@@ -2,8 +2,7 @@
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  */
 
-const OrderModel = require("../../model/order");
-const OrderItemModel = require("../../model/orderItem");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const orderController = {
@@ -16,20 +15,30 @@ const orderController = {
                 return res.status(400).json(Utility.formatResponse(400, "Cart is empty"));
             }
 
-            const order = await OrderModel.create({
-                customer_id: customerId,
-                total_amount: total_amount,
-                status: 'pending'
-            });
+            const { data: order, error: err1 } = await supabase
+                .from('order_table')
+                .insert({
+                    customer_id: customerId,
+                    total_amount: total_amount,
+                    status: 'pending'
+                })
+                .select('*')
+                .single();
 
-            for (let item of items) {
-                await OrderItemModel.create({
-                    order_id: order.id,
-                    product_id: item.product_id,
-                    quantity: item.quantity,
-                    price: item.price
-                });
-            }
+            if (err1) throw err1;
+
+            const orderItems = items.map(item => ({
+                order_id: order.id,
+                product_id: item.product_id,
+                quantity: item.quantity,
+                price: item.price
+            }));
+
+            const { error: err2 } = await supabase
+                .from('order_item')
+                .insert(orderItems);
+
+            if (err2) throw err2;
 
             return res.status(200).json(Utility.formatResponse(200, { message: "Order created successfully", order }));
         } catch (error) {
@@ -41,11 +50,14 @@ const orderController = {
     getMyOrders: async (req, res) => {
         try {
             const customerId = req.userId;
-            const orders = await OrderModel.findAll({
-                where: { customer_id: customerId }
-            });
-            // Ideally we also include items, but sticking to basics for now
-            return res.status(200).json(Utility.formatResponse(200, { orders }));
+            const { data: orders, error } = await supabase
+                .from('order_table')
+                .select('*')
+                .eq('customer_id', customerId);
+            
+            if (error) throw error;
+            
+            return res.status(200).json(Utility.formatResponse(200, { orders: orders || [] }));
         } catch (error) {
             console.error("Get orders error:", error);
             return res.status(500).json(Utility.formatResponse(500, "Internal server error"));

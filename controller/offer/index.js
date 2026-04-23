@@ -2,16 +2,19 @@
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  */
 
-const OfferModel = require("../../model/offer");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const offerController = {
     getOffers: async (req, res) => {
         try {
-            const offers = await OfferModel.findAll({
-                where: { is_active: true }
-            });
-            // If empty, return a dummy offer so the app has something to show
+            const { data: offers, error } = await supabase
+                .from('offer')
+                .select('*')
+                .eq('is_active', true);
+
+            if (error) throw error;
+
             if (!offers || offers.length === 0) {
                 return res.status(200).json(Utility.formatResponse(200, {
                     offers: [{

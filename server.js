@@ -12,23 +12,22 @@ const express = require('express');
 const fileUpload = require("express-fileupload");
 
 const config = require("./config");
-let { connectToMysql } = require("./db");
+require("./db");   // Validates Supabase config on startup
 const rateLimiter = require("./utility/rateLimiter");
 const v1Routes = require("./v1/routes");
 
 const app = express();
 
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:8081', 'https://eden-sign.netlify.app', 'https://eden-sign-admin.netlify.app'],     //allow multiple domains to connect
-    credentials: true,            //access-control-allow-credentials:true
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:8081', 'https://eden-sign.netlify.app', 'https://eden-sign-admin.netlify.app'],
+    credentials: true,
     optionSuccessStatus: 200
 }
-
 
 app.use(bodyParser.json({ limit: "20mb" }));
 app.use(bodyParser.urlencoded({ limit: "20mb", extended: true, parameterLimit: 50000 }));
 app.use(cors(corsOptions));
-app.use(fileUpload());   //express-fileupload middleware
+app.use(fileUpload());
 app.use(rateLimiter);
 
 app.use('/api/v1', v1Routes);

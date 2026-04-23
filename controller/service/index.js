@@ -1,86 +1,83 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const { Op } = require("sequelize");
-const Sequelize = require("sequelize");
-
-const ServiceModel = require("../../model/service");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const ServiceController = {
-    /** Get services from database based on query type, page, size and search if provided
-     */
-    getAll: (req, res) => {
-        const { page, size, search } = req.query;
-        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+    /** Get services from database based on query type, page, size and search if provided */
+    getAll: async (req, res) => {
+        try {
+            const { page, size, search } = req.query;
+            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
 
-        return new Promise((resolve, reject) => {
-            let searchCond = {};
+            let query = supabase
+                .from('service')
+                .select('*', { count: 'exact' });
+
             if (search) {
-                searchCond = {
-                    [Op.or]: [
-                        {
-                            name: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            status: {
-                                [Op.like]: `${search}%`
-                            }
-                        }
-                    ]
-                };
+                query = query.or(`name.ilike.%${search}%,status.ilike.${search}%`);
             }
-            ServiceModel.findAndCountAll({
-                limit, offset, where: { ...searchCond }, order: [
-                    ["updated_at", "DESC"]
-                ]
-            })
-                .then(list => {
-                    const { count, rows } = list;
-                    (count > 0) ?
-                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
-                        :
-                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+            const { data, count, error } = await query
+                .order('updated_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            if (count > 0) {
+                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("Service getAll error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
-    /** Creating Service in the database
-     */
-    createService: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            ServiceModel.create({ ...payload, created_by: req.body.userId })
-                .then(service => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, { id: service.id })));
-                })
-                .catch(err => {
-                    resolve(res.status(409).send(Utility.formatResponse(409, `${err.errors[0].message}`)));
-                });     //`${err.errors[0].message}`  this was added when it was sequelize constraint error
-        });
+
+    /** Creating Service in the database */
+    createService: async (req, res) => {
+        try {
+            const payload = { ...req.body, created_by: req.body.userId };
+            delete payload.userId;
+
+            const { data, error } = await supabase
+                .from('service')
+                .insert(payload)
+                .select('id')
+                .single();
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, { id: data.id }));
+        } catch (err) {
+            console.error("createService error:", err);
+            res.status(409).send(Utility.formatResponse(409, err.message));
+        }
     },
-    /** Updating Service in the database
-     */
-    updateService: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            ServiceModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
-                .then(updatedData => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+    /** Updating Service in the database */
+    updateService: async (req, res) => {
+        try {
+            const payload = { ...req.body, updated_by: req.body.userId, updated_at: new Date().toISOString() };
+            const id = payload.id;
+            delete payload.userId;
+            delete payload.id;
+
+            const { error } = await supabase
+                .from('service')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, `Updated Successfully`));
+        } catch (err) {
+            console.error("updateService error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 

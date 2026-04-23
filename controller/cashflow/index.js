@@ -1,211 +1,175 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use,reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const { Op, Sequelize } = require("sequelize");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
-const CashflowModel = require("../../model/cashflow");
-const SalonModel = require("../../model/salon");
 
 const cashflowController = {
-    /** Get all cashflow transactions with pagination and filters
-     */
-    getAll: (req, res) => {
-        const { page, size, search, type, startDate, endDate, salonId } = req.query;
-        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+    /** Get all cashflow transactions with pagination and filters */
+    getAll: async (req, res) => {
+        try {
+            const { page, size, search, type, startDate, endDate, salonId } = req.query;
+            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
 
-        let searchCond = {};
+            let query = supabase
+                .from('cashflow')
+                .select('*, salon:salon_id(id, name)', { count: 'exact' });
 
-        // Filter by Search (Description or Category)
-        if (search) {
-            searchCond = {
-                [Op.or]: [
-                    { description: { [Op.like]: `%${search}%` } },
-                    { category: { [Op.like]: `%${search}%` } }
-                ]
+            if (search) {
+                query = query.or(`description.ilike.%${search}%,category.ilike.%${search}%`);
+            }
+
+            if (type) {
+                query = query.eq('type', type);
+            }
+
+            if (startDate && endDate) {
+                query = query.gte('transaction_date', new Date(startDate).toISOString())
+                             .lte('transaction_date', new Date(endDate).toISOString());
+            }
+
+            if (salonId) {
+                query = query.eq('salon_id', salonId);
+            }
+
+            const { data, count, error } = await query
+                .order('transaction_date', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            if (count > 0) {
+                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("Cashflow getAll error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get cashflow transaction by ID */
+    getById: async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('cashflow')
+                .select('*')
+                .eq('id', req.params.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error;
+
+            if (data) {
+                res.status(200).send(Utility.formatResponse(200, data));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `Transaction not found`));
+            }
+        } catch (err) {
+            console.error("Cashflow getById error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Create a new cashflow transaction */
+    create: async (req, res) => {
+        try {
+            const payload = { 
+                ...req.body, 
+                transaction_date: req.body.transaction_date || new Date().toISOString(),
+                created_by: req.body.userId 
             };
-        }
+            delete payload.userId;
 
-        // Filter by Type (credit/debit)
-        if (type) {
-            searchCond.type = type;
-        }
+            const { error } = await supabase
+                .from('cashflow')
+                .insert(payload);
 
-        // Filter by Date Range
-        if (startDate && endDate) {
-            searchCond.transaction_date = {
-                [Op.between]: [new Date(startDate), new Date(endDate)]
-            };
-        }
+            if (error) throw error;
 
-        // Filter by Salon ID
-        if (salonId) {
-            searchCond.salon_id = salonId;
+            res.status(200).send(Utility.formatResponse(200, `Transaction Created Successfully`));
+        } catch (err) {
+            console.error("Cashflow create error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
         }
-
-        CashflowModel.findAndCountAll({
-            limit, offset,
-            where: { ...searchCond },
-            include: [
-                {
-                    model: SalonModel,
-                    attributes: ['id', 'name']
-                }
-            ],
-            order: [
-                ["transaction_date", "DESC"]
-            ]
-        })
-            .then(list => {
-                const { count, rows } = list;
-                if (count > 0) {
-                    res.status(200).send(Utility.formatResponse(200, { count, rows }));
-                } else {
-                    res.status(404).send(Utility.formatResponse(404, `No Data Found`));
-                }
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
-            });
     },
 
-    /** Get cashflow transaction by ID
-     */
-    getById: (req, res) => {
-        const id = req.params.id;
-        CashflowModel.findByPk(id)
-            .then(data => {
-                if (data) {
-                    res.status(200).send(Utility.formatResponse(200, data));
-                } else {
-                    res.status(404).send(Utility.formatResponse(404, `Transaction with id=${id} not found`));
-                }
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
-            });
-    },
+    /** Update an existing cashflow transaction */
+    update: async (req, res) => {
+        try {
+            const payload = { ...req.body, updated_by: req.body.userId, updated_at: new Date().toISOString() };
+            const id = payload.id;
+            delete payload.userId;
+            delete payload.id;
 
-    /** Create a new cashflow transaction
-     */
-    create: (req, res) => {
-        const { salon_id, amount, type, category, payment_method, description, transaction_date } = req.body;
-        const createData = {
-            salon_id,
-            amount,
-            type,
-            category,
-            payment_method,
-            description,
-            transaction_date: transaction_date || new Date(),
-            created_by: req.body.userId
-        };
+            const { error } = await supabase
+                .from('cashflow')
+                .update(payload)
+                .eq('id', id);
 
-        CashflowModel.create(createData)
-            .then(data => {
-                res.status(200).send(Utility.formatResponse(200, `Transaction Created Successfully`));
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
-            });
-    },
+            if (error) throw error;
 
-    /** Update an existing cashflow transaction
-     */
-    update: (req, res) => {
-        const { id, amount, type, category, payment_method, description, transaction_date } = req.body;
-        const updateData = { updated_by: req.body.userId };
-
-        if (amount !== undefined) updateData.amount = amount;
-        if (type !== undefined) updateData.type = type;
-        if (category !== undefined) updateData.category = category;
-        if (payment_method !== undefined) updateData.payment_method = payment_method;
-        if (description !== undefined) updateData.description = description;
-        if (transaction_date !== undefined) updateData.transaction_date = transaction_date;
-
-        CashflowModel.update(updateData, { where: { id } })
-            .then(num => {
-                if (num == 1) {
-                    res.status(200).send(Utility.formatResponse(200, `Transaction Updated Successfully`));
-                } else {
-                    res.status(404).send(Utility.formatResponse(404, `Cannot update Transaction with id=${id}. Maybe Transaction was not found or req.body is empty!`));
-                }
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
-            });
-    },
-
-    /** Delete a cashflow transaction
-     */
-    delete: (req, res) => {
-        const id = req.query.id;
-
-        CashflowModel.destroy({
-            where: { id: id }
-        })
-            .then(num => {
-                if (num == 1) {
-                    res.status(200).send(Utility.formatResponse(200, "Transaction was deleted successfully!"));
-                } else {
-                    res.status(404).send(Utility.formatResponse(404, `Cannot delete Transaction with id=${id}. Maybe Transaction was not found!`));
-                }
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, "Could not delete Transaction with id=" + id));
-            });
-    },
-
-    /** Get cashflow summary (Total Income, Total Expense, Balance)
-     */
-    getSummary: (req, res) => {
-        const { startDate, endDate, salonId } = req.query;
-        let searchCond = {};
-
-        if (startDate && endDate) {
-            searchCond.transaction_date = {
-                [Op.between]: [new Date(startDate), new Date(endDate)]
-            };
+            res.status(200).send(Utility.formatResponse(200, `Transaction Updated Successfully`));
+        } catch (err) {
+            console.error("Cashflow update error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
         }
+    },
 
-        if (salonId) {
-            searchCond.salon_id = salonId;
+    /** Delete a cashflow transaction */
+    delete: async (req, res) => {
+        try {
+            const { error } = await supabase
+                .from('cashflow')
+                .delete()
+                .eq('id', req.query.id);
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, "Transaction was deleted successfully!"));
+        } catch (err) {
+            console.error("Cashflow delete error:", err);
+            res.status(500).send(Utility.formatResponse(500, "Could not delete Transaction"));
         }
+    },
 
-        // Aggregate query to get total credit and total debit
-        CashflowModel.findAll({
-            attributes: [
-                'type',
-                [Sequelize.fn('SUM', Sequelize.col('amount')), 'totalAmount']
-            ],
-            where: searchCond,
-            group: ['type']
-        })
-            .then(result => {
-                let summary = {
-                    income: 0,
-                    expense: 0,
-                    balance: 0
-                };
+    /** Get cashflow summary (Total Income, Total Expense, Balance) */
+    getSummary: async (req, res) => {
+        try {
+            const { startDate, endDate, salonId } = req.query;
 
-                result.forEach(item => {
-                    if (item.type === 'credit') {
-                        summary.income = parseFloat(item.dataValues.totalAmount || 0);
-                    } else if (item.type === 'debit') {
-                        summary.expense = parseFloat(item.dataValues.totalAmount || 0);
-                    }
-                });
+            let query = supabase.from('cashflow').select('type, amount');
 
-                summary.balance = summary.income - summary.expense;
-                res.status(200).send(Utility.formatResponse(200, summary));
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
+            if (startDate && endDate) {
+                query = query.gte('transaction_date', new Date(startDate).toISOString())
+                             .lte('transaction_date', new Date(endDate).toISOString());
+            }
+
+            if (salonId) {
+                query = query.eq('salon_id', salonId);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            let summary = { income: 0, expense: 0, balance: 0 };
+
+            data.forEach(item => {
+                if (item.type === 'credit') {
+                    summary.income += parseFloat(item.amount || 0);
+                } else if (item.type === 'debit') {
+                    summary.expense += parseFloat(item.amount || 0);
+                }
             });
+
+            summary.balance = summary.income - summary.expense;
+            res.status(200).send(Utility.formatResponse(200, summary));
+
+        } catch (err) {
+            console.error("Cashflow getSummary error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 

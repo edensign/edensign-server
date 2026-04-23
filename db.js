@@ -1,30 +1,18 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use,reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
+ * Supabase connectivity — replaces MySQL connectToMysql()
+ * The Supabase client is initialized lazily; this just validates the config.
  */
 
-const sequelize = require("./sequelize");
+const config = require('./config');
 
-let db;
-/** 
- * Connects to the database
- * @return {Object} connection object
- */
-const connectToMysql = () => {
-    if (!db) {
-        db = sequelize.authenticate()
-            .then(() => {
-                return "Connected To Database Successfully!";
-            })
-            .catch(err => {
-                throw new Error("Error Connecting To Database ", err);
-            })
+const connectToSupabase = () => {
+    if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_KEY) {
+        throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in environment');
     }
-    return db;
+    console.log('Supabase client configured →', config.SUPABASE_URL);
+    return Promise.resolve('Supabase client ready');
 };
 
-//Calling the function at export
-module.exports = connectToMysql();
+module.exports = connectToSupabase();

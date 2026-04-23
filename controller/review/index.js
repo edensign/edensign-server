@@ -1,90 +1,80 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const ReviewModel = require("../../model/review");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const ReviewController = {
-    /** Create a new review
-     */
-    createReview: (req, res) => {
-        return new Promise((resolve, reject) => {
+    /** Create a new review */
+    createReview: async (req, res) => {
+        try {
             const {
-                salon_id,
-                customer_id,
-                quality_of_service,
-                facilities,
-                staff,
-                flexibility,
-                value_of_money,
-                reason,
-                comments
+                salon_id, customer_id, quality_of_service, facilities,
+                staff, flexibility, value_of_money, reason, comments
             } = req.body;
 
-            // Validate required field
             if (!salon_id) {
-                return resolve(res.status(400).send(Utility.formatResponse(400, "Missing required field: salon_id")));
+                return res.status(400).send(Utility.formatResponse(400, "Missing required field: salon_id"));
             }
 
-            // Validate rating values (0-5)
             const ratings = [quality_of_service, facilities, staff, flexibility, value_of_money];
             for (const rating of ratings) {
                 if (rating !== undefined && (rating < 0 || rating > 5)) {
-                    return resolve(res.status(400).send(Utility.formatResponse(400, "Rating values must be between 0 and 5")));
+                    return res.status(400).send(Utility.formatResponse(400, "Rating values must be between 0 and 5"));
                 }
             }
 
-            ReviewModel.create({
-                salon_id,
-                customer_id: customer_id || null,
-                quality_of_service: quality_of_service || 0,
-                facilities: facilities || 0,
-                staff: staff || 0,
-                flexibility: flexibility || 0,
-                value_of_money: value_of_money || 0,
-                reason: reason || null,
-                comments: comments || null
-            })
-                .then(review => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, { id: review.id, message: "Review submitted successfully" })));
+            const { data, error } = await supabase
+                .from('review')
+                .insert({
+                    salon_id,
+                    customer_id: customer_id || null,
+                    quality_of_service: quality_of_service || 0,
+                    facilities: facilities || 0,
+                    staff: staff || 0,
+                    flexibility: flexibility || 0,
+                    value_of_money: value_of_money || 0,
+                    reason: reason || null,
+                    comments: comments || null
                 })
-                .catch(err => {
-                    console.log("Error creating review:", err);
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+                .select('id')
+                .single();
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, { id: data.id, message: "Review submitted successfully" }));
+        } catch (err) {
+            console.error("Error creating review:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
 
-    /** Get all reviews for a salon
-     */
-    getReviewsBySalon: (req, res) => {
-        return new Promise((resolve, reject) => {
+    /** Get all reviews for a salon */
+    getReviewsBySalon: async (req, res) => {
+        try {
             const { salon_id } = req.params;
 
             if (!salon_id) {
-                return resolve(res.status(400).send(Utility.formatResponse(400, "Missing required parameter: salon_id")));
+                return res.status(400).send(Utility.formatResponse(400, "Missing required parameter: salon_id"));
             }
 
-            ReviewModel.findAll({
-                where: { salon_id },
-                order: [['created_at', 'DESC']]
-            })
-                .then(reviews => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, {
-                        rows: reviews || [],
-                        count: reviews?.length || 0
-                    })));
-                })
-                .catch(err => {
-                    console.log("Error fetching reviews:", err);
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+            const { data, count, error } = await supabase
+                .from('review')
+                .select('*', { count: 'exact' })
+                .eq('salon_id', salon_id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, {
+                rows: data || [],
+                count: count || 0
+            }));
+        } catch (err) {
+            console.error("Error fetching reviews:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 
