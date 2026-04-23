@@ -1,64 +1,58 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const ContactUsModel = require("../../model/contactUs");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const ContactUsController = {
-    /** Create a new contact us entry
-     */
-    createContact: (req, res) => {
-        return new Promise((resolve, reject) => {
+    /** Create a new contact us entry */
+    createContact: async (req, res) => {
+        try {
             const { name, email, message } = req.body;
 
             if (!name || !email || !message) {
-                return resolve(res.status(400).send(Utility.formatResponse(400, "Missing required fields: name, email, message")));
+                return res.status(400).send(Utility.formatResponse(400, "Missing required fields: name, email, message"));
             }
 
-            // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                return resolve(res.status(400).send(Utility.formatResponse(400, "Invalid email format")));
+                return res.status(400).send(Utility.formatResponse(400, "Invalid email format"));
             }
 
-            ContactUsModel.create({
-                name,
-                email,
-                message
-            })
-                .then(contact => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, contact)));
-                })
-                .catch(err => {
-                    console.log("Error creating contact entry:", err);
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+            const { data, error } = await supabase
+                .from('contact_us')
+                .insert({ name, email, message })
+                .select('*')
+                .single();
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, data));
+        } catch (err) {
+            console.error("Error creating contact entry:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
 
-    /** Get all contact us entries
-     */
-    getContacts: (req, res) => {
-        return new Promise((resolve, reject) => {
-            ContactUsModel.findAll({
-                order: [['created_at', 'DESC']]
-            })
-                .then(contacts => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, {
-                        rows: contacts || [],
-                        count: contacts?.length || 0
-                    })));
-                })
-                .catch(err => {
-                    console.log("Error fetching contacts:", err);
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+    /** Get all contact us entries */
+    getContacts: async (req, res) => {
+        try {
+            const { data, count, error } = await supabase
+                .from('contact_us')
+                .select('*', { count: 'exact' })
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, {
+                rows: data || [],
+                count: count || 0
+            }));
+        } catch (err) {
+            console.error("Error fetching contacts:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 

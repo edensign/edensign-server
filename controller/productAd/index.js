@@ -1,0 +1,135 @@
+/**
+ * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
+ */
+
+const supabase = require("../../supabase");
+const Utility = require("../../utility");
+
+const productAdController = {
+    /** Get active sponsored products ordered by ad_budget DESC */
+    getSponsored: async (req, res) => {
+        try {
+            const data = await Utility.executeRpc('get_sponsored_products');
+
+            if (data && data.length > 0) {
+                res.status(200).send(Utility.formatResponse(200, data));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("getSponsored error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get paginated list of all product ads (for admin) */
+    getAll: async (req, res) => {
+        try {
+            const { page = 0, size = 10, search } = req.query;
+            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+
+            let query = supabase
+                .from('product_ad')
+                .select('*, product:product_id(id, name, price, discounted_price)', { count: 'exact' });
+
+            if (search) {
+                query = query.or(`title.ilike.%${search}%,status.ilike.${search}%`);
+            }
+
+            const { data, count, error } = await query
+                .order('updated_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            if (count > 0) {
+                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("productAd getAll error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Create a new product ad */
+    create: async (req, res) => {
+        try {
+            const payload = { ...req.body, created_by: req.body.userId };
+            delete payload.userId;
+
+            const { data, error } = await supabase
+                .from('product_ad')
+                .insert(payload)
+                .select('id')
+                .single();
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, { id: data.id }));
+        } catch (err) {
+            console.error("create productAd error:", err);
+            res.status(409).send(Utility.formatResponse(409, `Error creating product ad`));
+        }
+    },
+
+    /** Update an existing product ad */
+    update: async (req, res) => {
+        try {
+            const payload = { ...req.body, updated_by: req.body.userId, updated_at: new Date().toISOString() };
+            const id = payload.id;
+            delete payload.userId;
+            delete payload.id;
+
+            const { error } = await supabase
+                .from('product_ad')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, `Updated Successfully`));
+        } catch (err) {
+            console.error("update productAd error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Soft-delete a product ad (set to expired) */
+    delete: async (req, res) => {
+        try {
+            const id = req.body.id;
+            const payload = { status: 'expired', updated_by: req.body.userId, updated_at: new Date().toISOString() };
+
+            const { error } = await supabase
+                .from('product_ad')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`));
+        } catch (err) {
+            console.error("delete productAd error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Track absolute clicks on an ad banner */
+    trackClick: async (req, res) => {
+        try {
+            // Using RPC for incrementing
+            const { error } = await supabase.rpc('increment_click_count', { row_id: req.params.id });
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, `Click tracked`));
+        } catch (err) {
+            console.error("trackClick error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    }
+};
+
+module.exports = productAdController;

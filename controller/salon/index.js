@@ -1,283 +1,253 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const { Op } = require("sequelize");
-
-const SalonModel = require("../../model/salon");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const salonController = {
-    /** Get salons from database based on query type, page, size and search if provided
-     */
-    getSalons: (req, res) => {
-        const { page, size, search } = req.query;
-        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+    /** Get salons from database based on query type, page, size and search if provided */
+    getSalons: async (req, res) => {
+        try {
+            const { page, size, search } = req.query;
+            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+            const userId = req.userId;
 
-        return new Promise((resolve, reject) => {
-            let searchCond = {};
+            let query = supabase
+                .from('salon')
+                .select('*, Creator:users!created_by(username), Referrer:users!referral_by(username)', { count: 'exact' });
+
+            if (userId) {
+                // Fetch user to check role
+                const { data: user } = await supabase.from('users').select('type').eq('id', userId).single();
+                if (user && user.type === 'sales_executive') {
+                    query = query.or(`created_by.eq.${userId},referral_by.eq.${userId}`);
+                }
+            }
+
             if (search) {
-                searchCond = {
-                    [Op.or]: [
-                        {
-                            name: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            email: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            status: {
-                                [Op.like]: `${search}%`
-                            }
-                        }
-                    ]
-                };
+                query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,status.ilike.${search}%`);
             }
-            SalonModel.findAndCountAll({
-                limit, offset, where: { ...searchCond }, order: [
-                    ["updated_at", "DESC"]
-                ]
-            })
-                .then(list => {
-                    const { count, rows } = list;
-                    (count > 0) ?
-                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
-                        :
-                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
-    },
-    /** Creating salon in the database
-    */
-    createSalon: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            SalonModel.create({ ...payload, created_by: req.body.userId })
-                .then(salon => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, { id: salon.id })));
-                })
-                .catch(err => {
-                    resolve(res.status(409).send(Utility.formatResponse(409, `${err.errors[0].message}`)));
-                });     //`${err.errors[0].message}`  this was added when it was sequelize constraint error
-        });
-    },
-    /** Updating Salon in the database
-     */
-    updateSalon: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            SalonModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
-                .then(updatedData => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
-    },
-    /** Finding salon in the database from user id that is received
-     */
-    getSalonByUserId: (req, res) => {
-        return new Promise((resolve, reject) => {
-            SalonModel.findOne({ where: { user_id: req.body.id } })
-                .then(salon => {
-                    if (salon) {
-                        resolve(res.status(200).send(Utility.formatResponse(200, salon)));
-                    } else {
-                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                    }
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
-    },
-    /** Get all the salons & their associated addresses by performing left outer join on both tables
-     */
-    getSalonList: (req, res) => {
 
-        function isObjectEmpty(obj) {
-            return Object.keys(obj).length === 0;
-        }
-        console.log("query=>", req.query)
+            const { data, error, count } = await query
+                .order('updated_at', { ascending: false })
+                .range(offset, offset + limit - 1);
 
-        return new Promise(async (resolve, reject) => {
-            if (isObjectEmpty(req.query)) {
-                const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
-                                    salon.is_featured, salon.is_franchise, address.street, address.landmark
-                                    FROM salon
-                                    INNER JOIN address ON salon.id = address.parent_id
-                                    ORDER BY salon.priority`;
-                Utility.executeQuery(queryString)
-                    .then(data => {
-                        console.log('DATATATATTA', data);
-                        data ?
-                            resolve(res.status(200).send(Utility.formatResponse(200, data)))
-                            :
-                            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                    })
-                    .catch(err => {
-                        reject(res.status(500).send(Utility.formatResponse(500, err)));
-                    });
+            if (error) throw error;
+
+            if (count > 0) {
+                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
             } else {
-                let featuredParam = req.query.is_featured ? `is_featured=${true}` : '';
-                let franchiseParam = req.query.is_franchise ? `salon.is_franchise=${true}` : '';
-                let genderParam = req.query.gender ? `type='${req.query.gender}'` : '';
-
-                if (featuredParam && (franchiseParam || genderParam)) {
-                    featuredParam += " AND";
-                }
-
-                if (franchiseParam && genderParam) {
-                    genderParam += " AND";
-                }
-
-                // Create a condition string based on genderParam and categoryParam
-                // let conditionString = '';
-                // if (genderParam || categoryParam) {
-                //     conditionString = `WHERE ${genderParam} ${genderParam && categoryParam ? 'AND' : ''} ${categoryParam}`;
-                // }
-
-                console.log('Gender Param:', genderParam);
-                console.log('featuredParam :', featuredParam);
-                console.log('franchiseParam:', franchiseParam);
-
-                const queryString = `SELECT salon.id, salon.banner_image, salon.name, salon.type, salon.salon_code,
-                                        salon.is_featured, salon.is_franchise, address.street, address.landmark,
-                                        (SELECT COUNT(*) FROM salon WHERE ${featuredParam} ${genderParam} ${franchiseParam} ) AS result_count
-                                        FROM salon
-                                        INNER JOIN address ON salon.id = address.parent_id
-                                        WHERE ${featuredParam} ${genderParam} ${franchiseParam}
-                                        ORDER BY salon.priority`;
-                Utility.executeQuery(queryString)
-                    .then(data => {
-                        data ?
-                            resolve(res.status(200).send(Utility.formatResponse(200, data)))
-                            :
-                            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                    })
-                    .catch(err => {
-                        reject(res.status(500).send(Utility.formatResponse(500, err)));
-                    });
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
             }
-        });
-    },
-    /** Get the salons, their associated addresses & their images by performing join on multiple tables
-     */
-    getSalonDetail: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const salonDetail = {
-                salon: {},
-                images: []
-            };
-            const salon_code = req.body.code;
-            console.log('req.body', req.body)
-            const queryString = `SELECT sa.*, 
-                                    address.street, address.landmark, images.image_src
-                                    FROM salon sa
-                                    LEFT OUTER JOIN address ON sa.id = address.parent_id 
-                                    LEFT OUTER JOIN images ON  sa.id = images.parent_id
-                                    WHERE sa.salon_code = '${salon_code}'
-                                    ORDER BY images.priority`;
-
-            Utility.executeQuery(queryString)
-                .then(response => {
-                    if (response) {
-                        response.map(salon => {
-                            salonDetail.salon = { ...salon };
-                            salonDetail.images.push(salon.image_src);
-                        });
-                        if (salonDetail.salon.image_src) {
-                            delete salonDetail.salon.image_src;
-                        }
-                        console.log("Salon detail=>", salonDetail)
-                        resolve(res.status(200).send(Utility.formatResponse(200, salonDetail)));
-                    } else {
-                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                    }
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
-    },
-    /** Get salon inventory data - salons with stock information
-     */
-    getSalonInventory: (req, res) => {
-        const { page, size, search } = req.query;
-        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
-
-        let searchCond = {};
-        if (search) {
-            searchCond = {
-                [Op.or]: [
-                    {
-                        name: {
-                            [Op.like]: `%${search}%`
-                        }
-                    },
-                    {
-                        sku: {
-                            [Op.like]: `%${search}%`
-                        }
-                    },
-                    {
-                        salon_code: {
-                            [Op.like]: `%${search}%`
-                        }
-                    }
-                ]
-            };
+        } catch (err) {
+            console.error("getSalons error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
         }
-        SalonModel.findAndCountAll({
-            limit, offset,
-            where: { ...searchCond },
-            attributes: ['id', 'name', 'salon_code', 'sku', 'stock_quantity', 'low_stock_threshold', 'status', 'type', 'area', 'updated_at'],
-            order: [
-                ["updated_at", "DESC"]
-            ]
-        })
-            .then(list => {
-                const { count, rows } = list;
-                if (count > 0) {
-                    res.status(200).send(Utility.formatResponse(200, { count, rows }));
-                } else {
-                    res.status(404).send(Utility.formatResponse(404, `No Data Found`));
-                }
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
-            });
     },
-    /** Update salon inventory stock
-     */
-    updateSalonInventory: (req, res) => {
-        const { id, stock_quantity, low_stock_threshold, sku } = req.body;
-        const updateData = { updated_by: req.body.userId };
 
-        if (stock_quantity !== undefined) updateData.stock_quantity = stock_quantity;
-        if (low_stock_threshold !== undefined) updateData.low_stock_threshold = low_stock_threshold;
-        if (sku !== undefined) updateData.sku = sku;
+    /** Creating salon in the database */
+    createSalon: async (req, res) => {
+        try {
+            const payload = { ...req.body, created_by: req.body.userId };
+            delete payload.userId;
 
-        SalonModel.update(updateData, { where: { id } })
-            .then(updatedData => {
-                res.status(200).send(Utility.formatResponse(200, `Salon Inventory Updated Successfully`));
-            })
-            .catch(err => {
-                res.status(500).send(Utility.formatResponse(500, err));
+            const { data, error } = await supabase
+                .from('salon')
+                .insert(payload)
+                .select('id')
+                .single();
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, { id: data.id }));
+        } catch (err) {
+            console.error("createSalon error:", err);
+            res.status(409).send(Utility.formatResponse(409, err.message || "Conflict"));
+        }
+    },
+
+    /** Updating Salon in the database */
+    updateSalon: async (req, res) => {
+        try {
+            const payload = { ...req.body, updated_by: req.body.userId, updated_at: new Date().toISOString() };
+            const id = payload.id;
+            delete payload.userId;
+            delete payload.id;
+
+            const { error } = await supabase
+                .from('salon')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, `Updated Successfully`));
+        } catch (err) {
+            console.error("updateSalon error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Finding salon in the database from user id that is received */
+    getSalonByUserId: async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('salon')
+                .select('*')
+                .eq('user_id', req.body.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 is No Rows Found
+
+            if (data) {
+                res.status(200).send(Utility.formatResponse(200, data));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("getSalonByUserId error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get all the salons & their associated addresses (uses RPC) */
+    getSalonList: async (req, res) => {
+        try {
+            const isFeatured = req.query.is_featured ? true : null;
+            const isFranchise = req.query.is_franchise ? true : null;
+            const gender = req.query.gender || null;
+
+            const data = await Utility.executeRpc('get_salon_list', {
+                p_is_featured: isFeatured,
+                p_is_franchise: isFranchise,
+                p_gender: gender
             });
+
+            if (data && data.length > 0) {
+                res.status(200).send(Utility.formatResponse(200, data));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("getSalonList error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get the salons, their associated addresses & their images (uses RPC) */
+    getSalonDetail: async (req, res) => {
+        try {
+            const salonCode = req.body.code;
+            const data = await Utility.executeRpc('get_salon_detail', { p_salon_code: salonCode });
+
+            if (data && data.length > 0) {
+                const salonDetail = { salon: {}, images: [] };
+                data.forEach(row => {
+                    if (Object.keys(salonDetail.salon).length === 0) {
+                        salonDetail.salon = { ...row };
+                        delete salonDetail.salon.image_src;
+                    }
+                    if (row.image_src) {
+                        salonDetail.images.push(row.image_src);
+                    }
+                });
+                res.status(200).send(Utility.formatResponse(200, salonDetail));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("getSalonDetail error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get salon inventory data - salons with stock information */
+    getSalonInventory: async (req, res) => {
+        try {
+            const { page, size, search } = req.query;
+            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+
+            let query = supabase
+                .from('salon')
+                .select('id, name, salon_code, sku, stock_quantity, low_stock_threshold, status, type, area, updated_at', { count: 'exact' });
+
+            if (search) {
+                query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,salon_code.ilike.%${search}%`);
+            }
+
+            const { data, error, count } = await query
+                .order('updated_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            if (count > 0) {
+                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            }
+        } catch (err) {
+            console.error("getSalonInventory error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Update salon inventory stock */
+    updateSalonInventory: async (req, res) => {
+        try {
+            const { id, stock_quantity, low_stock_threshold, sku } = req.body;
+            const updateData = { updated_by: req.body.userId, updated_at: new Date().toISOString() };
+
+            if (stock_quantity !== undefined) updateData.stock_quantity = stock_quantity;
+            if (low_stock_threshold !== undefined) updateData.low_stock_threshold = low_stock_threshold;
+            if (sku !== undefined) updateData.sku = sku;
+
+            const { error } = await supabase
+                .from('salon')
+                .update(updateData)
+                .eq('id', id);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, `Salon Inventory Updated Successfully`));
+        } catch (err) {
+            console.error("updateSalonInventory error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get salon stats for dashboard (specifically for sales_executive) */
+    getSalonStats: async (req, res) => {
+        try {
+            const userId = req.userId;
+
+            const { count: createdCount, error: err1 } = await supabase
+                .from('salon')
+                .select('*', { count: 'exact', head: true })
+                .eq('created_by', userId);
+            if (err1) throw err1;
+
+            const { count: referredCount, error: err2 } = await supabase
+                .from('salon')
+                .select('*', { count: 'exact', head: true })
+                .eq('referral_by', userId);
+            if (err2) throw err2;
+
+            const { count: activeCount, error: err3 } = await supabase
+                .from('salon')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'active')
+                .or(`created_by.eq.${userId},referral_by.eq.${userId}`);
+            if (err3) throw err3;
+
+            res.status(200).send(Utility.formatResponse(200, {
+                totalCreated: createdCount || 0,
+                totalReferred: referredCount || 0,
+                totalActive: activeCount || 0
+            }));
+        } catch (err) {
+            console.error("getSalonStats error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
-}
+};
 
 module.exports = salonController;

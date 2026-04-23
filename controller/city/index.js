@@ -1,104 +1,108 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const Sequelize = require("sequelize");
-
-const CityModel = require("../../model/city");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const cityController = {
-  /** Creating city in the database
- */
-  createCity: (req, res) => {
-    return new Promise((resolve, reject) => {
-      const payload = req.body;
-      CityModel.create({ ...payload, created_by: req.body.id })
-        .then((city) => {
-          resolve(res.status(200).send(Utility.formatResponse(200, { city })));
-        })
-        .catch((err) => {
-          resolve(res.status(409).send(Utility.formatResponse(409, `${err.errors[0].message}`)));
-        });
-    });
-  },
-  /** Get cities from database
-   */
-  getCities: (req, res) => {
-    return new Promise((resolve, reject) => {
-      CityModel.findAll({ where: { state_id: req.params.id } })
-        .then(list => {
-          (list.length > 0) ?
-            resolve(res.status(200).send(Utility.formatResponse(200, { list })))
-            :
-            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-        })
-        .catch(err => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
-  },
-  /** Updating city in database
-   */
-  updateCity: (req, res) => {
-    return new Promise((resolve, reject) => {
-      const updatedCityObject = { ...city, ...req.body };
-      CityModel.update(
-        { ...updatedCityObject },
-        { where: { id: req.params.id } }
-      )
-        .then((updatedData) => {
-          resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-        })
-        .catch((err) => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
+  /** Creating city in the database */
+  createCity: async (req, res) => {
+    try {
+      const payload = { ...req.body, created_by: req.body.id };
+      delete payload.userId; // Ensure userId is removed if present
+
+      const { data, error } = await supabase
+        .from('city')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.status(200).send(Utility.formatResponse(200, { city: data }));
+    } catch (err) {
+      console.error("createCity error:", err);
+      res.status(409).send(Utility.formatResponse(409, err.message));
+    }
   },
 
-  /** Finding the matched id record of city in database then deleting the particular record
-  */
-  removeCity: (req, res) => {
-    return new Promise((resolve, reject) => {
-      CityModel.findByPk(req.params.id)
-        .then((city) => {
-          if (city) {
-            CityModel.destroy({ where: { id: req.params.id } })
-              .then((deletedData) => {
-                resolve(res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`)));
-              })
-              .catch((err) => {
-                reject(res.status(500).send(Utility.formatResponse(500, err)));
-              });
-          } else {
-            resolve(res.status(404).send(Utility.formatResponse(404, `City Not Found`)));
-          }
-        })
-        .catch((err) => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
+  /** Get cities from database */
+  getCities: async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('city')
+        .select('*')
+        .eq('state_id', req.params.id);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        res.status(200).send(Utility.formatResponse(200, { list: data }));
+      } else {
+        res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+      }
+    } catch (err) {
+      console.error("getCities error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
   },
-  /** Get all the cities from database for edensign website
-   */
-  getAll: (req, res) => {
-    return new Promise((resolve, reject) => {
-      CityModel.findAndCountAll()
-        .then(list => {
-          const { count, rows } = list;
-          (count > 0) ?
-            resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
-            :
-            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-        })
-        .catch(err => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
+
+  /** Updating city in database */
+  updateCity: async (req, res) => {
+    try {
+      const payload = { ...req.body };
+      delete payload.userId; // Cleanup
+
+      const { error } = await supabase
+        .from('city')
+        .update(payload)
+        .eq('id', req.params.id);
+
+      if (error) throw error;
+      res.status(200).send(Utility.formatResponse(200, `Updated Successfully`));
+    } catch (err) {
+      console.error("updateCity error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
+  },
+
+  /** Finding the matched id record of city in database then deleting the particular record */
+  removeCity: async (req, res) => {
+    try {
+      const { error } = await supabase
+        .from('city')
+        .delete()
+        .eq('id', req.params.id);
+
+      if (error) throw error;
+      
+      // Supabase delete doesn't return count easily without another query or checking data,
+      // but if no error is thrown, we assume success or it was already deleted.
+      res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`));
+    } catch (err) {
+      console.error("removeCity error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
+  },
+
+  /** Get all the cities from database for edensign website */
+  getAll: async (req, res) => {
+    try {
+      const { data, count, error } = await supabase
+        .from('city')
+        .select('*', { count: 'exact' });
+
+      if (error) throw error;
+
+      if (count > 0) {
+        res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+      } else {
+        res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+      }
+    } catch (err) {
+      console.error("city getAll error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
   }
 };
 

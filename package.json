@@ -23,6 +23,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.717.0",
     "@azure/storage-blob": "^12.14.0",
+    "@supabase/supabase-js": "^2.45.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
@@ -31,8 +32,7 @@
     "express-fileupload": "^1.4.0",
     "express-rate-limit": "^6.7.0",
     "jsonwebtoken": "^9.0.0",
-    "mysql2": "^3.3.1",
-    "sequelize": "^6.31.1"
+    "mysql2": "^3.3.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

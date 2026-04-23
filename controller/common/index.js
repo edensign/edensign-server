@@ -1,31 +1,37 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const commonController = {
-    /** Find user of specified model from the database
-     */
-    getByPk: (req, res) => {
-        const Model = Utility.getModel(req.params.table);
-        let exclude = {};
-        return new Promise((resolve, reject) => {
-            Model.findByPk(req.params.id, { attributes: exclude })
-                .then(data => {
-                    !data ?
-                        resolve(res.status(404).send(Utility.formatResponse(404, `Data Not Found`)))
-                        :
-                        resolve(res.status(200).send(Utility.formatResponse(200, data)));
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+    /** Find user of specified model from the database */
+    getByPk: async (req, res) => {
+        try {
+            const tableName = Utility.getValidTable(req.params.table);
+            
+            if (!tableName) {
+                return res.status(400).send(Utility.formatResponse(400, `Invalid table name`));
+            }
+
+            const { data, error } = await supabase
+                .from(tableName)
+                .select('*')
+                .eq('id', req.params.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') throw error;
+
+            if (data) {
+                res.status(200).send(Utility.formatResponse(200, data));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, `Data Not Found`));
+            }
+        } catch (err) {
+            console.error("Common getByPk error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 }
 

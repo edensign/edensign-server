@@ -1,75 +1,49 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const { Op } = require("sequelize");
-const Sequelize = require("sequelize");
-
-const UserModel = require("../../model/user");
-const Utility = require("../../utility");
+const supabase = require("../../supabase");
+const Utility  = require("../../utility");
 
 const userController = {
-    /** Get users from database based on query type, page, size and search if provided
-     */
-    getUsers: (req, res) => {
-        const { page, size, search } = req.query;
-        const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
-        let cond = null;
+    /** Get users from database with pagination, type filter, and optional search */
+    getUsers: async (req, res) => {
+        try {
+            const { page, size, search } = req.query;
+            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
 
-        if (req.query.type) {
-            cond = req.query.type.split(',');
-        }
-        return new Promise((resolve, reject) => {
-            let searchCond = {
-                type: cond
-            };
-            if (search) {
-                searchCond = {
-                    ...searchCond,
-                    [Op.or]: [
-                        {
-                            username: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            email: {
-                                [Op.like]: `%${search}%`
-                            }
-                        },
-                        {
-                            status: {
-                                [Op.like]: `${search}%`
-                            }
-                        }
-                    ]
-                };
+            let query = supabase
+                .from('users')
+                .select('id, username, email, contact_no, type, gender, status, agreement, created_at, updated_at, created_by', { count: 'exact' });
+
+            if (req.query.type) {
+                const types = req.query.type.split(',');
+                query = query.in('type', types);
             }
-            UserModel.findAndCountAll({
-                limit, offset, where: { ...searchCond }, order: [
-                    ["updated_at", "DESC"]
-                ]
-            })
-                .then(list => {
-                    const { count, rows } = list;
-                    if (count > 0) {
-                        resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })));
-                    } else {
-                        resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-                    }
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+            if (search) {
+                query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,status.ilike.${search}%`);
+            }
+
+            const { data, error, count } = await query
+                .order('updated_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) throw error;
+
+            if (count > 0) {
+                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+            } else {
+                res.status(404).send(Utility.formatResponse(404, 'No Data Found'));
+            }
+        } catch (err) {
+            console.error('getUsers error:', err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
-    /** Creating hash of password and a new user & assigning an Auth Token
-    */
-    register: (req, res) => {
+
+    /** Register a new user (admin-created) */
+    register: async (req, res) => {
         console.log("User registration request received:", JSON.stringify(req.body, null, 2));
         const { username, password, email, contact_no } = req.body;
 
@@ -77,126 +51,127 @@ const userController = {
             return res.status(400).send(Utility.formatResponse(400, "Username, password, email, and contact number are required"));
         }
 
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            Utility.createHash(payload.password)
-                .then(hash => {
-                    payload.password = hash;
-                    // Defaulting status to active for admin-created users or new registrations if desired
-                    if (!payload.status) payload.status = "active"; 
+        try {
+            const hash = await Utility.createHash(password);
+            const payload = {
+                ...req.body,
+                password:   hash,
+                status:     req.body.status || 'active',
+                created_by: req.body.userId,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            // Remove userId from payload (not a table column)
+            delete payload.userId;
+            delete payload.id;
 
-                    UserModel.create({ ...payload, created_by: req.body.userId })
-                        .then(user => {
-                            console.log("User created successfully with ID:", user.id);
-                            const token = Utility.getSignedToken(user.id);
-                            resolve(res.status(200).send(Utility.formatResponse(200, { token, id: user.id })));
-                        })
-                        .catch(err => {
-                            console.error("User creation DB error:", err);
-                            const errorMessage = (err.errors && err.errors.length > 0) 
-                                ? err.errors[0].message 
-                                : (err.message || "Database error occurred");
-                            resolve(res.status(409).send(Utility.formatResponse(409, errorMessage)));
-                        });
-                })
-                .catch(err => {
-                    console.error("Hashing error:", err);
-                    resolve(res.status(500).send(Utility.formatResponse(500, "Internal server error during password encryption")));
-                });
-        });
+            const { data, error } = await supabase
+                .from('users')
+                .insert(payload)
+                .select('id')
+                .single();
+
+            if (error) throw error;
+
+            const token = Utility.getSignedToken(data.id);
+            res.status(200).send(Utility.formatResponse(200, { token, id: data.id }));
+        } catch (err) {
+            console.error("User creation error:", err);
+            res.status(409).send(Utility.formatResponse(409, err.message || "Error creating user"));
+        }
     },
-    /** Finding entered email in database & comparing password, if matched, logging in the user & 
-     * sending authentication token
-     */
-    login: (req, res) => {
-        return new Promise((resolve, reject) => {
-            UserModel.findOne({
-                where: { email: req.body.email, status: "active" }
-            }).then(user => {
-                if (user) {
-                    Utility.comparePassword(req.body.password, user.password)
-                        .then((isMatch) => {
-                            if (isMatch) {
-                                const token = Utility.getSignedToken(user.id);
-                                resolve(res.status(200)
-                                    .send(Utility.formatResponse(200, {
-                                        token,
-                                        id: user.id,
-                                        type: user.type,
-                                        username: user.username
-                                    })));
-                            } else {
-                                resolve(res.status(200).send(Utility
-                                    .formatResponse(200, `Username and Password do not match`)));
-                            }
-                        });
-                } else {
-                    resolve(res.status(200).send(Utility.formatResponse(200, `User does not exist`)));
-                }
-            });
-        });
-    },
-    /** Finding user in database, if found, display user's information
-    */
-    profile: (req, res) => {
-        return new Promise((resolve, reject) => {
-            UserModel.findByPk(req.body.userId, { attributes: { exclude: ['password'] } })
-                .then(user => {
-                    if (!user) {
-                        resolve(res.status(404).send(Utility.formatResponse(404, `User Not Found`)));
-                    } else {
-                        resolve(res.status(200).send(Utility.formatResponse(200, user)));
-                    }
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
-    },
-    /** Updating user in the database
-     */
-    updateUser: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const payload = req.body;
-            if (payload.password) {     //this condition didn't run because we dont got the password
-                Utility.createHash(payload.password)
-                    .then(hash => {
-                        payload.password = hash;
-                        UserModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
-                            .then(updatedData => {
-                                resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-                            })
-                            .catch(err => {
-                                reject(res.status(500).send(Utility.formatResponse(500, err)));
-                            });
-                    })
-            } else {
-                UserModel.update({ ...payload, updated_by: req.body.userId }, { where: { id: req.body.id } })
-                    .then(updatedData => {
-                        resolve(res.status(200).send(Utility.formatResponse(200, `Updated Successfully`)));
-                    })
-                    .catch(err => {
-                        reject(res.status(500).send(Utility.formatResponse(500, err)));
-                    });
+
+    /** Login admin/sales_executive user */
+    login: async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', req.body.email)
+                .eq('status', 'active')
+                .single();
+
+            if (error || !data) {
+                return res.status(200).send(Utility.formatResponse(200, 'User does not exist'));
             }
-        });
+
+            const isMatch = await Utility.comparePassword(req.body.password, data.password);
+            if (isMatch) {
+                const token = Utility.getSignedToken(data.id);
+                res.status(200).send(Utility.formatResponse(200, {
+                    token,
+                    id:       data.id,
+                    type:     data.type,
+                    username: data.username
+                }));
+            } else {
+                res.status(200).send(Utility.formatResponse(200, 'Username and Password do not match'));
+            }
+        } catch (err) {
+            console.error('login error:', err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
-    /** Finding salon user agreement value from the database by user id
-    */
-    getAgreement: (req, res) => {
-        return new Promise((resolve, reject) => {
-            UserModel.findOne({ where: { id: req.body.userId, type: "salon" } })
-                .then(data => {
-                    if (data) {
-                        resolve(res.status(200).send(Utility.formatResponse(200, data.agreement)));
-                    } else {
-                        resolve(res.status(404).send(Utility.formatResponse(404, `Invalid User Type`)));
-                    }
-                })
-                .catch(err => {
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+
+    /** Get logged-in user's profile */
+    profile: async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, username, email, contact_no, type, gender, status, agreement, created_at, updated_at, created_by')
+                .eq('id', req.body.userId)
+                .single();
+
+            if (error || !data) {
+                return res.status(404).send(Utility.formatResponse(404, 'User Not Found'));
+            }
+            res.status(200).send(Utility.formatResponse(200, data));
+        } catch (err) {
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Update user record */
+    updateUser: async (req, res) => {
+        try {
+            const payload = { ...req.body, updated_by: req.body.userId, updated_at: new Date().toISOString() };
+            const id = payload.id;
+            delete payload.userId;
+            delete payload.id;
+
+            if (payload.password) {
+                payload.password = await Utility.createHash(payload.password);
+            }
+
+            const { error } = await supabase
+                .from('users')
+                .update(payload)
+                .eq('id', id);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, 'Updated Successfully'));
+        } catch (err) {
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get salon agreement value for logged-in salon user */
+    getAgreement: async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('agreement')
+                .eq('id', req.body.userId)
+                .eq('type', 'salon')
+                .single();
+
+            if (error || !data) {
+                return res.status(404).send(Utility.formatResponse(404, 'Invalid User Type'));
+            }
+            res.status(200).send(Utility.formatResponse(200, data.agreement));
+        } catch (err) {
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 

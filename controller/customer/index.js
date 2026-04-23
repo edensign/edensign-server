@@ -1,175 +1,141 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const CustomerModel = require("../../model/customer");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const customerController = {
 
-    /**
-     * Register a new customer
-     * @param {Object} req - Request object with username, password, contact_no, email
-     * @param {Object} res - Response object
-     */
+    /** Register a new customer */
     register: async (req, res) => {
         try {
             console.log("Customer registration request received:", JSON.stringify(req.body, null, 2));
             const { username, password, contact_no, email } = req.body;
 
-            // Validation
             if (!username || !password || !contact_no) {
-                return res.status(400).json(
-                    Utility.formatResponse(400, "Username, password, and contact number are required")
-                );
+                return res.status(400).json(Utility.formatResponse(400, "Username, password, and contact number are required"));
             }
 
-            // Check if customer already exists with same contact_no or email
-            const existingCustomer = await CustomerModel.findOne({
-                where: {
-                    [require("sequelize").Op.or]: [
-                        { contact_no: contact_no },
-                        ...(email ? [{ email: email }] : [])
-                    ]
-                }
-            });
-
-            if (existingCustomer) {
-                return res.status(409).json(
-                    Utility.formatResponse(409, "Customer with this contact number or email already exists")
-                );
+            let query = supabase.from('customer').select('id');
+            if (email) {
+                query = query.or(`contact_no.eq.${contact_no},email.eq.${email}`);
+            } else {
+                query = query.eq('contact_no', contact_no);
             }
 
-            // Hash password
+            const { data: existingCustomer, error: err1 } = await query;
+            if (err1) throw err1;
+
+            if (existingCustomer && existingCustomer.length > 0) {
+                return res.status(409).json(Utility.formatResponse(409, "Customer with this contact number or email already exists"));
+            }
+
             const hashedPassword = await Utility.createHash(password);
 
-            // Create customer
-            const customer = await CustomerModel.create({
-                username,
-                password: hashedPassword,
-                contact_no,
-                email: email || null,
-                created_at: new Date()
-            });
+            const { data: customer, error: err2 } = await supabase
+                .from('customer')
+                .insert({
+                    username,
+                    password: hashedPassword,
+                    contact_no,
+                    email: email || null,
+                    created_at: new Date().toISOString()
+                })
+                .select('id, username, contact_no, email')
+                .single();
 
-            console.log("Customer created successfully with ID:", customer.id);
+            if (err2) throw err2;
 
-            // Generate token
             const token = Utility.getSignedToken(customer.id);
 
-            return res.status(200).json(
-                Utility.formatResponse(200, {
-                    message: "Registration successful",
-                    customer: {
-                        id: customer.id,
-                        username: customer.username,
-                        contact_no: customer.contact_no,
-                        email: customer.email
-                    },
-                    token
-                })
-            );
+            return res.status(200).json(Utility.formatResponse(200, {
+                message: "Registration successful",
+                customer: {
+                    id: customer.id,
+                    username: customer.username,
+                    contact_no: customer.contact_no,
+                    email: customer.email
+                },
+                token
+            }));
 
         } catch (error) {
             console.error("Customer registration error:", error);
-            return res.status(500).json(
-                Utility.formatResponse(500, error.message || "Internal server error")
-            );
+            return res.status(500).json(Utility.formatResponse(500, error.message || "Internal server error"));
         }
     },
 
-    /**
-     * Login customer
-     * @param {Object} req - Request object with contact_no/email and password
-     * @param {Object} res - Response object
-     */
+    /** Login customer */
     login: async (req, res) => {
         try {
             const { contact_no, email, password } = req.body;
 
-            // Validation
             if ((!contact_no && !email) || !password) {
-                return res.status(400).json(
-                    Utility.formatResponse(400, "Contact number or email and password are required")
-                );
+                return res.status(400).json(Utility.formatResponse(400, "Contact number or email and password are required"));
             }
 
-            // Find customer
-            const customer = await CustomerModel.findOne({
-                where: contact_no ? { contact_no } : { email }
-            });
+            let query = supabase.from('customer').select('*');
+            if (contact_no) {
+                query = query.eq('contact_no', contact_no);
+            } else {
+                query = query.eq('email', email);
+            }
+
+            const { data: customer, error: err1 } = await query.single();
+            if (err1 && err1.code !== 'PGRST116') throw err1;
 
             if (!customer) {
-                return res.status(404).json(
-                    Utility.formatResponse(404, "Customer not found")
-                );
+                return res.status(404).json(Utility.formatResponse(404, "Customer not found"));
             }
 
-            // Compare password
             const isMatch = await Utility.comparePassword(password, customer.password);
 
             if (!isMatch) {
-                return res.status(401).json(
-                    Utility.formatResponse(401, "Invalid password")
-                );
+                return res.status(401).json(Utility.formatResponse(401, "Invalid password"));
             }
 
-            // Generate token
             const token = Utility.getSignedToken(customer.id);
 
-            return res.status(200).json(
-                Utility.formatResponse(200, {
-                    message: "Login successful",
-                    customer: {
-                        id: customer.id,
-                        username: customer.username,
-                        contact_no: customer.contact_no,
-                        email: customer.email
-                    },
-                    token
-                })
-            );
+            return res.status(200).json(Utility.formatResponse(200, {
+                message: "Login successful",
+                customer: {
+                    id: customer.id,
+                    username: customer.username,
+                    contact_no: customer.contact_no,
+                    email: customer.email
+                },
+                token
+            }));
 
         } catch (error) {
             console.error("Login error:", error);
-            return res.status(500).json(
-                Utility.formatResponse(500, "Internal server error")
-            );
+            return res.status(500).json(Utility.formatResponse(500, "Internal server error"));
         }
     },
 
-    /**
-     * Get customer profile (requires token)
-     * @param {Object} req - Request object with customer id from token
-     * @param {Object} res - Response object
-     */
+    /** Get customer profile (requires token) */
     getProfile: async (req, res) => {
         try {
             const customerId = req.userId;
 
-            const customer = await CustomerModel.findByPk(customerId, {
-                attributes: ['id', 'username', 'contact_no', 'email', 'created_at']
-            });
+            const { data: customer, error } = await supabase
+                .from('customer')
+                .select('id, username, contact_no, email, created_at')
+                .eq('id', customerId)
+                .single();
+            
+            if (error && error.code !== 'PGRST116') throw error;
 
             if (!customer) {
-                return res.status(404).json(
-                    Utility.formatResponse(404, "Customer not found")
-                );
+                return res.status(404).json(Utility.formatResponse(404, "Customer not found"));
             }
 
-            return res.status(200).json(
-                Utility.formatResponse(200, customer)
-            );
+            return res.status(200).json(Utility.formatResponse(200, customer));
 
         } catch (error) {
             console.error("Get profile error:", error);
-            return res.status(500).json(
-                Utility.formatResponse(500, "Internal server error")
-            );
+            return res.status(500).json(Utility.formatResponse(500, "Internal server error"));
         }
     }
 };

@@ -34,6 +34,8 @@ const orderController = require("../../controller/order");
 const bannerController = require("../../controller/banner");
 const offerController = require("../../controller/offer");
 const { verifyToken, formatResponse } = require("../../utility");
+const productAdController = require("../../controller/productAd");
+const academyController = require("../../controller/academy");
 
 const router = express.Router();
 
@@ -111,6 +113,7 @@ router.delete('/delete-product-image', verifyToken, productImageController.delet
 
 //--------------------------------------SALON------------------------------------------
 router.get('/get-salons', verifyToken, salonController.getSalons);
+router.get('/get-salon-stats', verifyToken, salonController.getSalonStats);
 router.get('/get-salon-list', verifyToken, salonController.getSalonList);   //using mysql JOIN
 router.post('/get-salon-detail', verifyToken, salonController.getSalonDetail);   //using mysql JOIN
 router.post('/get-by-user-id', verifyToken, salonController.getSalonByUserId);
@@ -194,6 +197,8 @@ router.get('/appointments/my', verifyToken, appointmentController.getAppointment
 
 // PRODUCTS
 router.get('/products', productController.getProducts); // using getProducts
+// PRODUCT ADS (SPONSORED) - MUST be before /products/:id to prevent route conflict
+router.get('/products/sponsored', productAdController.getSponsored);      // public
 router.get('/products/:id', productController.getProducts); // Can pass id later
 
 // ORDERS
@@ -205,5 +210,19 @@ router.get('/banners', bannerController.getBanners);
 router.get('/offers', offerController.getOffers);
 router.get('/services/popular', serviceController.getAll);
 router.get('/cities', cityController.getAll);
+
+// PRODUCT ADS - ADMIN routes
+router.get('/product-ads', verifyToken, productAdController.getAll);      // admin
+router.post('/product-ads/create', verifyToken, productAdController.create); // admin
+router.patch('/product-ads/update', verifyToken, productAdController.update); // admin
+router.delete('/product-ads/delete', verifyToken, productAdController.delete); // admin
+router.post('/product-ads/track-click/:id', productAdController.trackClick); // public
+
+//-----------------------------------ACADEMY-----------------------------------
+router.get('/academy/get-all', verifyToken, academyController.getAll);           // admin
+router.get('/academy/public-list', academyController.getPublicList);             // public
+router.post('/academy/create', verifyToken, academyController.create);           // admin
+router.patch('/academy/update', verifyToken, academyController.update);          // admin
+router.delete('/academy/delete', verifyToken, academyController.delete);        // admin
 
 module.exports = router;

@@ -1,129 +1,108 @@
 /**
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
- *
- * This software is the confidential information of Eden Sign Inc., and is licensed as
- * restricted rights software. The use, reproduction, or disclosure of this software is subject to
- * restrictions set forth in your license agreement with Eden Sign.
  */
 
-const Sequelize = require("sequelize");
-
-const StateModel = require("../../model/state");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const stateController = {
-  /** Get states from database based on query type search if provided
-   */
-  getStates: (req, res) => {
-    return new Promise((resolve, reject) => {
+  /** Get states from database based on country */
+  getStates: async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('state')
+        .select('*')
+        .eq('country_id', req.params.id);
 
-      StateModel.findAll({ where: { country_id: req.params.id } })
-        .then(list => {
-          (list.length > 0) ?
-            resolve(res.status(200).send(Utility.formatResponse(200, { list })))
-            :
-            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-        })
-        .catch(err => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
-  },
-  /** Creating a new state record in the database.*/
-  createState: (req, res) => {
-    return new Promise((resolve, reject) => {
-      const payload = req.body;
-      StateModel.create({ ...payload, created_by: req.body.id })
-        .then((state) => {
-          resolve(res.status(200).send(Utility.formatResponse(200, { state })));
-        })
-        .catch((err) => {
-          resolve(res.status(409).send(Utility.formatResponse(409, `${err}`)));
-        });
-    });
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        res.status(200).send(Utility.formatResponse(200, { list: data }));
+      } else {
+        res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+      }
+    } catch (err) {
+      console.error("getStates error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
   },
 
-  /** Finding state in database, if found then updating it with newly entered data.*/
-  updateState: (req, res) => {
-    return new Promise((resolve, reject) => {
-      StateModel.findByPk(req.params.id)
-        .then((state) => {
-          if (state) {
-            const updatedStateObject = { ...state, ...req.body };
-            StateModel.update(
-              { ...updatedStateObject },
-              { where: { id: req.params.id } }
-            )
-              .then((updatedData) => {
-                resolve(
-                  res
-                    .status(200)
-                    .send(Utility.formatResponse(200, `Updated Successfully`))
-                );
-              })
-              .catch((err) => {
-                reject(res.status(500).send(Utility.formatResponse(500, err)));
-              });
-          } else {
-            resolve(
-              res
-                .status(404)
-                .send(Utility.formatResponse(404, `State Not Found`))
-            );
-          }
-        })
-        .catch((err) => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
+  /** Creating a new state record in the database. */
+  createState: async (req, res) => {
+    try {
+      const payload = { ...req.body, created_by: req.body.id };
+      delete payload.userId;
+
+      const { data, error } = await supabase
+        .from('state')
+        .insert(payload)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      res.status(200).send(Utility.formatResponse(200, { state: data }));
+    } catch (err) {
+      console.error("createState error:", err);
+      res.status(409).send(Utility.formatResponse(409, err.message));
+    }
   },
 
-  /** Finding the matched id record of state in database, if found then deleting the particular record.*/
-  removeState: (req, res) => {
-    return new Promise((resolve, reject) => {
-      StateModel.findByPk(req.params.id)
-        .then((state) => {
-          if (state) {
-            StateModel.destroy({ where: { id: req.params.id } })
-              .then((deletedData) => {
-                resolve(
-                  res
-                    .status(200)
-                    .send(Utility.formatResponse(200, `Deleted Successfully`))
-                );
-              })
-              .catch((err) => {
-                reject(res.status(500).send(Utility.formatResponse(500, err)));
-              });
-          } else {
-            resolve(
-              res
-                .status(404)
-                .send(Utility.formatResponse(404, `State Not Found`))
-            );
-          }
-        })
-        .catch((err) => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
+  /** Finding state in database, if found then updating it with newly entered data. */
+  updateState: async (req, res) => {
+    try {
+      const payload = { ...req.body };
+      delete payload.userId;
+
+      const { error } = await supabase
+        .from('state')
+        .update(payload)
+        .eq('id', req.params.id);
+
+      if (error) throw error;
+
+      res.status(200).send(Utility.formatResponse(200, `Updated Successfully`));
+    } catch (err) {
+      console.error("updateState error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
   },
-  /** Get all the states from database for edensign website
-   */
-  getAll: (req, res) => {
-    return new Promise((resolve, reject) => {
-      StateModel.findAndCountAll()
-        .then(list => {
-          const { count, rows } = list;
-          (count > 0) ?
-            resolve(res.status(200).send(Utility.formatResponse(200, { count, rows })))
-            :
-            resolve(res.status(404).send(Utility.formatResponse(404, `No Data Found`)));
-        })
-        .catch(err => {
-          reject(res.status(500).send(Utility.formatResponse(500, err)));
-        });
-    });
+
+  /** Finding the matched id record of state in database, if found then deleting the particular record. */
+  removeState: async (req, res) => {
+    try {
+      const { error } = await supabase
+        .from('state')
+        .delete()
+        .eq('id', req.params.id);
+
+      if (error) throw error;
+
+      res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`));
+    } catch (err) {
+      console.error("removeState error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
+  },
+
+  /** Get all the states from database for edensign website */
+  getAll: async (req, res) => {
+    try {
+      const { data, count, error } = await supabase
+        .from('state')
+        .select('*', { count: 'exact' });
+
+      if (error) throw error;
+
+      if (count > 0) {
+        res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+      } else {
+        res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+      }
+    } catch (err) {
+      console.error("state getAll error:", err);
+      res.status(500).send(Utility.formatResponse(500, err.message));
+    }
   }
 };
 

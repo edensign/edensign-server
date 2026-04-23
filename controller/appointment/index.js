@@ -2,50 +2,42 @@
  * Copyright © 2026, Eden Sign Inc. ALL RIGHTS RESERVED.
  */
 
-const AppointmentModel = require("../../model/appointment");
-const SalonEmployeeModel = require("../../model/salonEmployee");
-const SalonModel = require("../../model/salon");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
-const { Op } = require("sequelize");
 
 const AppointmentController = {
-    /** Get booked slots for a specific employee and date
-     */
-    getBookedSlots: (req, res) => {
-        return new Promise((resolve, reject) => {
+    /** Get booked slots for a specific employee and date */
+    getBookedSlots: async (req, res) => {
+        try {
             const { employee_id, date } = req.body;
 
             if (!employee_id || !date) {
-                return resolve(res.status(400).send(Utility.formatResponse(400, "Missing employee_id or date")));
+                return res.status(400).send(Utility.formatResponse(400, "Missing employee_id or date"));
             }
 
-            // Create date range for the entire day
             const searchDate = new Date(date);
-            const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
+            const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0)).toISOString();
+            const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999)).toISOString();
 
-            AppointmentModel.findAll({
-                where: {
-                    salon_employee: employee_id,
-                    date: {
-                        [Op.between]: [startOfDay, endOfDay]
-                    }
-                },
-                attributes: ['time_slot']
-            })
-                .then(appointments => {
-                    const bookedSlots = appointments.map(a => a.time_slot);
-                    resolve(res.status(200).send(Utility.formatResponse(200, bookedSlots)));
-                })
-                .catch(err => {
-                    console.log("Error fetching booked slots:", err);
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+            const { data, error } = await supabase
+                .from('appointment')
+                .select('time_slot')
+                .eq('salon_employee', employee_id)
+                .gte('date', startOfDay)
+                .lte('date', endOfDay);
+
+            if (error) throw error;
+
+            const bookedSlots = data.map(a => a.time_slot);
+            res.status(200).send(Utility.formatResponse(200, bookedSlots));
+
+        } catch (err) {
+            console.error("Error fetching booked slots:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
 
-    /** Create a new appointment
-     */
+    /** Create a new appointment */
     createAppointment: async (req, res) => {
         try {
             const { date, time_slot, services, salon_employee, booked_for, customer_name, customer_contact } = req.body;
@@ -56,115 +48,98 @@ const AppointmentController = {
 
             let customerId = req.userId;
 
-            // Check if user is Admin or Salon
-            // effective way is to check if customer_contact is provided, if so, we treat it as an Admin/Salon creating for a customer
             if (customer_contact && customer_name) {
-                // Check if customer exists
-                let customer = await require("../../model/customer").findOne({ where: { contact_no: customer_contact } });
+                const { data: customer, error: err1 } = await supabase
+                    .from('customer')
+                    .select('id')
+                    .eq('contact_no', customer_contact)
+                    .single();
+
+                if (err1 && err1.code !== 'PGRST116') throw err1;
 
                 if (!customer) {
-                    // Create new customer (Guest)
-                    // We need a password for the model, so we generate a random one or a default
                     const randomPassword = Math.random().toString(36).slice(-8);
                     const hashedPassword = await Utility.createHash(randomPassword);
 
-                    customer = await require("../../model/customer").create({
-                        username: customer_name,
-                        contact_no: customer_contact,
-                        password: hashedPassword,
-                        created_at: new Date()
-                    });
+                    const { data: newCustomer, error: err2 } = await supabase
+                        .from('customer')
+                        .insert({
+                            username: customer_name,
+                            contact_no: customer_contact,
+                            password: hashedPassword,
+                            created_at: new Date().toISOString()
+                        })
+                        .select('id')
+                        .single();
+
+                    if (err2) throw err2;
+                    customerId = newCustomer.id;
+                } else {
+                    customerId = customer.id;
                 }
-                customerId = customer.id;
             }
 
-            // Check if slot is already booked
             const searchDate = new Date(date);
-            const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999));
+            const startOfDay = new Date(searchDate.setHours(0, 0, 0, 0)).toISOString();
+            const endOfDay = new Date(searchDate.setHours(23, 59, 59, 999)).toISOString();
 
-            const existingAppointment = await AppointmentModel.findOne({
-                where: {
-                    salon_employee: salon_employee,
-                    time_slot: time_slot,
-                    date: {
-                        [Op.between]: [startOfDay, endOfDay]
-                    }
-                }
-            });
+            const { data: existingAppointment, error: err3 } = await supabase
+                .from('appointment')
+                .select('id')
+                .eq('salon_employee', salon_employee)
+                .eq('time_slot', time_slot)
+                .gte('date', startOfDay)
+                .lte('date', endOfDay)
+                .single();
+
+            if (err3 && err3.code !== 'PGRST116') throw err3;
 
             if (existingAppointment) {
                 return res.status(409).send(Utility.formatResponse(409, "This slot is already booked"));
             }
 
-            // Create the appointment
-            const appointment = await AppointmentModel.create({
-                date: new Date(date),
-                time_slot,
-                services: services || '',
-                salon_employee,
-                booked_for: booked_for || 'self',
-                customer_id: customerId
-            });
+            const { data: appointment, error: err4 } = await supabase
+                .from('appointment')
+                .insert({
+                    date: new Date(date).toISOString(),
+                    time_slot,
+                    services: services || '',
+                    salon_employee,
+                    booked_for: booked_for || 'self',
+                    customer_id: customerId
+                })
+                .select('*')
+                .single();
+
+            if (err4) throw err4;
 
             return res.status(200).send(Utility.formatResponse(200, appointment));
 
         } catch (err) {
-            console.log("Error creating appointment:", err);
-            return res.status(500).send(Utility.formatResponse(500, err));
+            console.error("Error creating appointment:", err);
+            return res.status(500).send(Utility.formatResponse(500, err.message));
         }
     },
 
-    /** Get all appointments with salon and employee details
-     */
-    getAppointments: (req, res) => {
-        return new Promise((resolve, reject) => {
-            const { salonId } = req.query;
-            let condition = "";
+    /** Get all appointments with salon and employee details */
+    getAppointments: async (req, res) => {
+        try {
+            const salonId = req.query.salonId ? parseInt(req.query.salonId) : null;
+            
+            const data = await Utility.executeRpc('get_appointments', { p_salon_id: salonId });
 
-            if (salonId) {
-                condition = `WHERE s.id = ${salonId}`;
-            }
+            return res.status(200).send(Utility.formatResponse(200, {
+                rows: data || [],
+                count: data ? data.length : 0
+            }));
 
-            const queryString = `
-                SELECT 
-                    a.id,
-                    a.date,
-                    a.time_slot,
-                    a.services,
-                    a.booked_for,
-                    a.customer_id,
-                    c.username as customer_name,
-                    c.contact_no as customer_contact,
-                    se.name as employee_name,
-                    se.contact_no as employee_contact,
-                    s.name as salon_name,
-                    s.area as salon_area
-                FROM appointment a
-                LEFT JOIN customer c ON a.customer_id = c.id
-                LEFT JOIN salon_employee se ON a.salon_employee = se.id
-                LEFT JOIN salon s ON se.salon_id = s.id
-                ${condition}
-                ORDER BY a.date DESC, a.time_slot ASC
-            `;
-
-            Utility.executeQuery(queryString)
-                .then(response => {
-                    resolve(res.status(200).send(Utility.formatResponse(200, {
-                        rows: response || [],
-                        count: response?.length || 0
-                    })));
-                })
-                .catch(err => {
-                    console.log("Error fetching appointments:", err);
-                    reject(res.status(500).send(Utility.formatResponse(500, err)));
-                });
-        });
+        } catch (err) {
+            console.error("Error fetching appointments:", err);
+            return res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     },
-    /** Get Kanban slots: all stylists for a salon on a given date with their appointments
-     * Query params: date (YYYY-MM-DD), salonId
-     * Returns: { stylists, appointments, salonHours }
-     */
+
+    /** Get Kanban slots: all stylists for a salon on a given date with their appointments */
     getKanbanSlots: async (req, res) => {
         try {
             const { date, salonId } = req.query;
@@ -174,7 +149,14 @@ const AppointmentController = {
             }
 
             // Fetch salon details for opening/closing hours
-            const salon = await SalonModel.findOne({ where: { id: salonId } });
+            const { data: salon, error: err1 } = await supabase
+                .from('salon')
+                .select('opening_time, closing_time, closed_on')
+                .eq('id', salonId)
+                .single();
+
+            if (err1 && err1.code !== 'PGRST116') throw err1;
+
             const salonHours = salon ? {
                 opening_time: salon.opening_time,
                 closing_time: salon.closing_time,
@@ -182,10 +164,12 @@ const AppointmentController = {
             } : null;
 
             // Fetch all stylists for this salon
-            const stylists = await SalonEmployeeModel.findAll({
-                where: { salon_id: salonId },
-                attributes: ['id', 'name', 'services', 'contact_no']
-            });
+            const { data: stylists, error: err2 } = await supabase
+                .from('salon_employee')
+                .select('id, name, services, contact_no')
+                .eq('salon_id', salonId);
+
+            if (err2) throw err2;
 
             if (!stylists || stylists.length === 0) {
                 return res.status(200).send(Utility.formatResponse(200, {
@@ -197,40 +181,21 @@ const AppointmentController = {
 
             const stylistIds = stylists.map(s => s.id);
 
-            // Build date range for the selected day
-            const searchDate = new Date(date);
-            const startOfDay = new Date(date + 'T00:00:00.000Z');
-            const endOfDay = new Date(date + 'T23:59:59.999Z');
-
-            // Fetch all appointments for those stylists on that date (with customer info)
-            const queryString = `
-                SELECT
-                    a.id,
-                    a.time_slot,
-                    a.services,
-                    a.booked_for,
-                    a.salon_employee,
-                    a.date,
-                    c.username as customer_name,
-                    c.contact_no as customer_contact
-                FROM appointment a
-                LEFT JOIN customer c ON a.customer_id = c.id
-                WHERE a.salon_employee IN (${stylistIds.join(',')})
-                AND DATE(a.date) = '${date}'
-                ORDER BY a.time_slot ASC
-            `;
-
-            const appointments = await Utility.executeQuery(queryString);
+            // Fetch appointments using RPC
+            const appointments = await Utility.executeRpc('get_kanban_appointments', {
+                p_stylist_ids: stylistIds,
+                p_date: date
+            });
 
             return res.status(200).send(Utility.formatResponse(200, {
-                stylists: stylists.map(s => s.toJSON ? s.toJSON() : s),
+                stylists,
                 appointments: appointments || [],
                 salonHours
             }));
 
         } catch (err) {
-            console.log("Error fetching kanban slots:", err);
-            return res.status(500).send(Utility.formatResponse(500, err.message || err));
+            console.error("Error fetching kanban slots:", err);
+            return res.status(500).send(Utility.formatResponse(500, err.message));
         }
     }
 };

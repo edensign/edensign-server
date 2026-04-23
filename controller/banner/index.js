@@ -2,16 +2,19 @@
  * Copyright © 2023, Eden Sign Inc. ALL RIGHTS RESERVED.
  */
 
-const BannerModel = require("../../model/banner");
+const supabase = require("../../supabase");
 const Utility = require("../../utility");
 
 const bannerController = {
     getBanners: async (req, res) => {
         try {
-            const banners = await BannerModel.findAll({
-                where: { is_active: true }
-            });
-            // If empty, return a dummy banner so the app has something to show
+            const { data: banners, error } = await supabase
+                .from('banner')
+                .select('*')
+                .eq('is_active', true);
+
+            if (error) throw error;
+
             if (!banners || banners.length === 0) {
                 return res.status(200).json(Utility.formatResponse(200, {
                     banners: [{

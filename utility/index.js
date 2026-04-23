@@ -8,23 +8,19 @@
 
 const bcrypt = require("bcryptjs");
 const { BlobServiceClient } = require("@azure/storage-blob");
-
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-
 const jwt = require("jsonwebtoken");
-const Sequelize = require("sequelize");
 
 const config = require("../config");
-const sequelize = require("../sequelize");
+const supabase = require("../supabase");
 
-const salt = config.SALT;
+const salt   = config.SALT;
 const secret = config.SECRET;
 const bucketName = config.BUCKET;
-const region = config.REGION;
-const accessKey = config.ACCESS_KEY;
-const secretKey = config.SECRET_KEY;
-
-const sasURL = config.IMAGE_CONTAINER_SAS_URL;
+const region     = config.REGION;
+const accessKey  = config.ACCESS_KEY;
+const secretKey  = config.SECRET_KEY;
+const sasURL     = config.IMAGE_CONTAINER_SAS_URL;
 
 const blobServiceClient = new BlobServiceClient(sasURL);
 
@@ -55,7 +51,7 @@ const Utility = {
      * Comparing 2 passwords
      * @param {String} password
      * @param {String} hash
-     * @return {Boolean} true/false 
+     * @return {Boolean} true/false
      */
     comparePassword: (password, hash) => {
         return new Promise((resolve, reject) => {
@@ -118,22 +114,19 @@ const Utility = {
             }
 
             if (!token) {
-                // No token provided - for protected routes, reject
                 const type = req.headers['type'];
                 if (type === "admin") {
                     resolve(res.status(401).send(Utility.formatResponse(401, `No Token Provided`)));
                 } else {
-                    // For non-admin routes, allow but without userId
                     resolve(next());
                 }
             } else {
-                // Token provided - verify it and set userId
                 jwt.verify(token, secret, (err, decoded) => {
                     if (err) {
                         resolve(res.status(401).send(Utility.formatResponse(401, `Failed To Authenticate Token`)));
                     } else {
-                        req.userId = decoded.id;  // Set userId from token
-                        req.body.userId = decoded.id;  // Also set in body for backwards compatibility
+                        req.userId = decoded.id;
+                        req.body.userId = decoded.id;
                         resolve(next());
                     }
                 });
@@ -141,41 +134,16 @@ const Utility = {
         });
     },
     /**
-     * Get Schema Model according to tableName
-     * @param {String} tableName 
-     * @return {Object} Schema Model
+     * Get Schema table name for getByPk common endpoint
+     * @param {String} tableName
+     * @return {String} validated table name
      */
-    getModel: (tableName) => {
-        let model;
-        switch (tableName) {
-            case 'users':
-                model = require("../model/user");
-                break;
-            case 'salon':
-                model = require("../model/salon");
-                break;
-            case 'amenity':
-                model = require("../model/amenity");
-                break;
-            case 'service':
-                model = require("../model/service");
-                break;
-            case 'salon_employee':
-                model = require("../model/salonEmployee");
-                break;
-            case 'job_seeker':
-                model = require("../model/jobSeeker");
-                break;
-            case 'product':
-                model = require("../model/product");
-                break;
-            case 'salon_inventory_product':
-                model = require("../model/salonInventoryProduct");
-                break;
-            default:
-                break;
-        };
-        return model;
+    getValidTable: (tableName) => {
+        const allowed = [
+            'users', 'salon', 'amenity', 'service', 'salon_employee',
+            'job_seeker', 'product', 'salon_inventory_product'
+        ];
+        return allowed.includes(tableName) ? tableName : null;
     },
     /**
      * Get API limit and offset
@@ -186,74 +154,67 @@ const Utility = {
     getPagination: (page, size) => {
         let _page = (page !== undefined && !Number.isNaN(page) && page >= 0) ? page : 0;
         let _size = (size !== undefined && !Number.isNaN(size) && size > 0) ? size : 100;
-        let limit = _size;
+        let limit  = _size;
         let offset = _page * _size;
         return { limit, offset };
     },
     /**
-     * Format sql query by adding type attribute
-     * @param {String} query
-     * @return {Object} object containing the query with type
+     * Execute a Supabase RPC (replaces raw Sequelize executeQuery)
+     * @param {String} fnName  - Supabase function name
+     * @param {Object} params  - Parameters object
+     * @return {Array} result rows
      */
-    executeQuery: (queryString) => {
-        return sequelize.query(queryString, { type: Sequelize.QueryTypes.SELECT });
+    executeRpc: async (fnName, params = {}) => {
+        const { data, error } = await supabase.rpc(fnName, params);
+        if (error) throw error;
+        return data;
     },
 
-    // upload the document to aws s3 bucket
+    // Upload to Supabase Storage (replaces AWS S3)
     uploadToS3: async (folder, file, res) => {
-        console.log('folder', folder, file);
-        // Initialize an S3 client instance
-        const s3Client = new S3Client({
-            region: region,
-            credentials: {
-                accessKeyId: accessKey,
-                secretAccessKey: secretKey,
-            },
-        });
-
-        // Set the parameters for the file you want to upload
-        const params = {
-            Bucket: bucketName,
-            Key: folder,
-            Body: file.data,
-            ContentType: file.mimetype,
-        };
-
         try {
-            // Upload the file to S3 using the PutObjectCommand
-            const data = await s3Client.send(new PutObjectCommand(params));
-            console.log("data", data)
+            const bucketName = config.SUPABASE_BUCKET_NAME;
 
-            // The uploaded file URL will need to be manually constructed since v3 doesn't directly return a location
-            const fileLocation = `https://${bucketName}.s3.${region}.amazonaws.com/${folder}`;
+            // Upload the file to Supabase Storage
+            const { data, error } = await supabase
+                .storage
+                .from(bucketName)
+                .upload(folder, file.data, {
+                    contentType: file.mimetype,
+                    upsert: true
+                });
 
-            console.log('File uploaded successfully. File location:', fileLocation);
+            if (error) {
+                console.error("Supabase storage upload error:", error);
+                throw error;
+            }
+
+            // Get the public URL for the uploaded file
+            const { data: publicUrlData } = supabase
+                .storage
+                .from(bucketName)
+                .getPublicUrl(folder);
+
+            const fileLocation = publicUrlData.publicUrl;
             return res.status(200).send(Utility.formatResponse(200, fileLocation));
         } catch (err) {
-            console.log('Error uploading file:', err);
-            return res.status(500).send(
-                Utility.formatResponse(500, 'Error occurred while uploading the file')
-            );
+            console.error("uploadToS3 error:", err);
+            return res.status(500).send(Utility.formatResponse(500, 'Error occurred while uploading the file'));
         }
     },
 
     /**
      * Upload image to azure blob storage
-     * @param {Buffer} file
-     * @param {String} name
-     * @return {String} bytes of data saved on azure 
      */
     uploadingImageToAzure: async (folderName, file, formattedName) => {
-        /** Uploads the given image in the specified azure container 
-         */
         try {
-            const containerClient = blobServiceClient.getContainerClient(folderName);
-            const blobClient = containerClient.getBlobClient(formattedName);
-            const blockBlobClient = blobClient.getBlockBlobClient();
-            const result = await blockBlobClient.uploadData(file, {
-                blockSize: 4 * 1024 * 1024,       // 4 MiB max block size
-                concurrency: 20,                 // maximum number of parallel transfer workers
-                onProgress: ev => console.log("Azure Storage Result=>", ev)
+            const containerClient  = blobServiceClient.getContainerClient(folderName);
+            const blobClient       = containerClient.getBlobClient(formattedName);
+            const blockBlobClient  = blobClient.getBlockBlobClient();
+            await blockBlobClient.uploadData(file, {
+                blockSize:   4 * 1024 * 1024,
+                concurrency: 20,
+                onProgress:  ev => console.log("Azure Storage Result=>", ev)
             });
         } catch (error) {
             throw error;
