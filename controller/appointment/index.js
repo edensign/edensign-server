@@ -197,6 +197,34 @@ const AppointmentController = {
             console.error("Error fetching kanban slots:", err);
             return res.status(500).send(Utility.formatResponse(500, err.message));
         }
+    },
+
+    /** Get appointments for the logged-in customer */
+    getCustomerAppointments: async (req, res) => {
+        try {
+            const customerId = req.userId;
+            const { data, error } = await supabase
+                .from('appointment')
+                .select(`
+                    *,
+                    salon_employee:salon_employee (
+                        name,
+                        salon:salon_id (id, name, email)
+                    )
+                `)
+                .eq('customer_id', customerId)
+                .order('date', { ascending: false });
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, {
+                rows: data || [],
+                count: data ? data.length : 0
+            }));
+        } catch (err) {
+            console.error("Error fetching customer appointments:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 

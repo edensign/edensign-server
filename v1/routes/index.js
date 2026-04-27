@@ -36,6 +36,7 @@ const offerController = require("../../controller/offer");
 const { verifyToken, formatResponse } = require("../../utility");
 const productAdController = require("../../controller/productAd");
 const academyController = require("../../controller/academy");
+const digitalOfferController = require("../../controller/digitalOffer");
 
 const router = express.Router();
 
@@ -48,6 +49,7 @@ router.get('/customer/profile', verifyToken, customerController.getProfile);
 router.post('/get-booked-slots', appointmentController.getBookedSlots);
 router.post('/create-appointment', verifyToken, appointmentController.createAppointment);
 router.get('/get-appointments', verifyToken, appointmentController.getAppointments);
+router.get('/customer/appointments', verifyToken, appointmentController.getCustomerAppointments);
 router.get('/get-kanban-slots', verifyToken, appointmentController.getKanbanSlots);
 
 //-----------------------------------CONTACT US-----------------------------------
@@ -224,5 +226,15 @@ router.get('/academy/public-list', academyController.getPublicList);            
 router.post('/academy/create', verifyToken, academyController.create);           // admin
 router.patch('/academy/update', verifyToken, academyController.update);          // admin
 router.delete('/academy/delete', verifyToken, academyController.delete);        // admin
+
+//-----------------------------------DIGITAL OFFERS-----------------------------------
+router.get('/digital-offers/get-all', digitalOfferController.getAllOffers); 
+router.get('/digital-offers/get-by-id/:id', digitalOfferController.getOfferById);
+router.post('/digital-offers/create', verifyToken, digitalOfferController.createOffer);
+router.patch('/digital-offers/update', verifyToken, digitalOfferController.updateOffer);
+router.delete('/digital-offers/delete', verifyToken, digitalOfferController.deleteOffer);
+
+router.post('/digital-offers/claim', verifyToken, digitalOfferController.claimOffer);
+router.get('/digital-offers/my-cards', verifyToken, digitalOfferController.getUserCards);
 
 module.exports = router;
