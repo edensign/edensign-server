@@ -9,25 +9,33 @@ const productController = {
     /** Get products from database based on query type, page, size and search if provided */
     getProducts: async (req, res) => {
         try {
+            const { id } = req.params; // Support for /products/:id
             const { page, size, search } = req.query;
-            const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
-
+            
             let query = supabase
                 .from('product')
-                .select('*', { count: 'exact' });
+                .select('*, product_image(image_src)', { count: 'exact' });
 
-            if (search) {
-                query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,color.ilike.%${search}%,status.ilike.${search}%`);
+            if (id) {
+                query = query.eq('id', id).single();
+            } else {
+                const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+                
+                if (search) {
+                    query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,color.ilike.%${search}%,status.ilike.${search}%`);
+                }
+                
+                query = query
+                    .order('updated_at', { ascending: false })
+                    .range(offset, offset + limit - 1);
             }
 
-            const { data, count, error } = await query
-                .order('updated_at', { ascending: false })
-                .range(offset, offset + limit - 1);
+            const { data, count, error } = await query;
 
             if (error) throw error;
 
-            if (count > 0) {
-                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
+            if (data) {
+                res.status(200).send(Utility.formatResponse(200, id ? data : { count, rows: data }));
             } else {
                 res.status(404).send(Utility.formatResponse(404, `No Data Found`));
             }

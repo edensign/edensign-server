@@ -35,5 +35,14 @@ module.exports = {
     BUCKET:     process.env.AWS_BUCKET_NAME,
 
     // Azure Blob Storage
-    IMAGE_CONTAINER_SAS_URL: process.env.IMAGE_CONTAINER_SAS_URL || "https://edensign1.blob.core.windows.net/image-storage?sp=racwdl&st=2023-11-08T06:00:11Z&se=2024-03-16T14:00:11Z&sv=2022-11-02&sr=c&sig=jUD8G%2F4U%2FxKUuYF4AMpBhL1Nw5zHzGdwGHqeHaxPd5g%3D"
+    IMAGE_CONTAINER_SAS_URL: process.env.IMAGE_CONTAINER_SAS_URL || "https://edensign1.blob.core.windows.net/image-storage?sp=racwdl&st=2023-11-08T06:00:11Z&se=2024-03-16T14:00:11Z&sv=2022-11-02&sr=c&sig=jUD8G%2F4U%2FxKUuYF4AMpBhL1Nw5zHzGdwGHqeHaxPd5g%3D",
+
+    // Razorpay
+    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+
+    // Firebase Admin
+    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
+    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY
 };
