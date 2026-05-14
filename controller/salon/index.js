@@ -21,7 +21,8 @@ const salonController = {
                 // Fetch user to check role
                 const { data: user } = await supabase.from('users').select('type').eq('id', userId).single();
                 if (user && user.type === 'sales_executive') {
-                    query = query.or(`created_by.eq.${userId},referral_by.eq.${userId}`);
+                    // Include salons where this user is creator, referrer, or the linked user_id
+                    query = query.or(`created_by.eq.${userId},referral_by.eq.${userId},user_id.eq.${userId}`);
                 }
             }
 
@@ -35,11 +36,8 @@ const salonController = {
 
             if (error) throw error;
 
-            if (count > 0) {
-                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
-            } else {
-                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
-            }
+            // Always return success with data (even empty list) so the frontend can render properly
+            res.status(200).send(Utility.formatResponse(200, { count: count || 0, rows: data || [] }));
         } catch (err) {
             console.error("getSalons error:", err);
             res.status(500).send(Utility.formatResponse(500, err.message));

@@ -4,6 +4,7 @@
 
 const supabase = require("../../supabase");
 const Utility = require("../../utility");
+const { sendPushNotification } = require("../../utility/notificationHelper");
 
 const AppointmentController = {
     /** Get booked slots for a specific employee and date */
@@ -106,12 +107,91 @@ const AppointmentController = {
                     services: services || '',
                     salon_employee,
                     booked_for: booked_for || 'self',
-                    customer_id: customerId
+                    customer_id: customerId,
+                    // Note: If you add an amount/status column to appointment later, it goes here
                 })
                 .select('*')
                 .single();
 
             if (err4) throw err4;
+
+            // Send push notification asynchronously
+            sendPushNotification(
+                customerId,
+                "Appointment Booked",
+                `Your appointment for ${date.split('T')[0]} at ${time_slot} has been successfully initiated.`,
+                "appointment",
+                { appointmentId: appointment.id }
+            );
+
+            const { amount, useWallet } = req.body;
+            let payableAmount = amount ? parseFloat(amount) : 0;
+            let walletDeduction = 0;
+
+            if (payableAmount > 0 && useWallet) {
+                const { data: wallet } = await supabase
+                    .from('wallet')
+                    .select('balance')
+                    .eq('user_id', customerId)
+                    .single();
+
+                if (wallet && wallet.balance > 0) {
+                    if (wallet.balance >= payableAmount) {
+                        walletDeduction = payableAmount;
+                        payableAmount = 0;
+                    } else {
+                        walletDeduction = wallet.balance;
+                        payableAmount = payableAmount - wallet.balance;
+                    }
+                }
+            }
+
+            // Handle full wallet payment
+            if (payableAmount === 0 && walletDeduction > 0) {
+                const { data: wallet } = await supabase.from('wallet').select('id, balance').eq('user_id', customerId).single();
+                await supabase.from('wallet').update({ balance: wallet.balance - walletDeduction }).eq('id', wallet.id);
+                
+                await supabase.from('wallet_transactions').insert({
+                    user_id: customerId,
+                    type: 'debit',
+                    amount: walletDeduction,
+                    source: 'booking_payment',
+                    status: 'success',
+                    description: `Paid for appointment ${appointment.id} entirely from wallet`
+                });
+
+                return res.status(200).send(Utility.formatResponse(200, { appointment, payment: { status: 'paid' } }));
+            }
+
+            // Handle partial or full Razorpay payment
+            if (payableAmount > 0) {
+                const RazorpayUtils = require('../../utility/razorpay');
+                const receipt = `appt_${appointment.id}_${Date.now()}`;
+                const rpOrder = await RazorpayUtils.createOrder(payableAmount, receipt);
+
+                // Create a pending wallet transaction if there is a wallet deduction
+                if (walletDeduction > 0) {
+                    await supabase.from('wallet_transactions').insert({
+                        user_id: customerId,
+                        type: 'debit',
+                        amount: walletDeduction,
+                        source: 'booking_payment',
+                        status: 'pending',
+                        razorpay_order_id: rpOrder.id,
+                        description: `Pending wallet deduction for appointment ${appointment.id}`
+                    });
+                }
+
+                return res.status(200).send(Utility.formatResponse(200, {
+                    appointment,
+                    payment: {
+                        status: 'payment_pending',
+                        razorpay_order: rpOrder,
+                        walletDeduction,
+                        payableAmount
+                    }
+                }));
+            }
 
             return res.status(200).send(Utility.formatResponse(200, appointment));
 

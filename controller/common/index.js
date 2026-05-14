@@ -26,7 +26,8 @@ const commonController = {
             if (data) {
                 res.status(200).send(Utility.formatResponse(200, data));
             } else {
-                res.status(404).send(Utility.formatResponse(404, `Data Not Found`));
+                // Return success with null if not found to avoid breaking multiple API calls on frontend
+                res.status(200).send(Utility.formatResponse(200, null));
             }
         } catch (err) {
             console.error("Common getByPk error:", err);

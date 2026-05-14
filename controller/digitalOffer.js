@@ -153,6 +153,7 @@ const digitalOfferController = {
                 .select('id')
                 .eq('offer_id', offer_id)
                 .eq('user_id', user_id)
+                .limit(1)
                 .maybeSingle();
 
             if (fetchError) throw fetchError;

@@ -37,8 +37,11 @@ const { verifyToken, formatResponse } = require("../../utility");
 const productAdController = require("../../controller/productAd");
 const academyController = require("../../controller/academy");
 const digitalOfferController = require("../../controller/digitalOffer");
+const walletController = require("../../controller/wallet");
+const notificationController = require("../../controller/notification/notification.controller");
 
 const router = express.Router();
+
 
 //-----------------------------------CUSTOMER-----------------------------------
 router.post('/customer/register', customerController.register);
@@ -236,5 +239,19 @@ router.delete('/digital-offers/delete', verifyToken, digitalOfferController.dele
 
 router.post('/digital-offers/claim', verifyToken, digitalOfferController.claimOffer);
 router.get('/digital-offers/my-cards', verifyToken, digitalOfferController.getUserCards);
+
+//-----------------------------------WALLET-----------------------------------
+router.get('/wallet/balance', verifyToken, walletController.getBalance);
+router.get('/wallet/transactions', verifyToken, walletController.getTransactions);
+router.post('/wallet/add-money', verifyToken, walletController.addMoney);
+router.post('/wallet/verify-add-money', verifyToken, walletController.verifyAddMoney);
+router.post('/wallet/verify-payment', verifyToken, walletController.verifyPayment);
+router.post('/wallet/initiate-appointment-payment', verifyToken, walletController.initiateAppointmentPayment);
+router.post('/wallet/verify-appointment', verifyToken, walletController.verifyAndBookAppointment);
+
+//-----------------------------------NOTIFICATIONS-----------------------------------
+router.post('/notifications/token', verifyToken, notificationController.saveFCMToken);
+router.get('/notifications/list', verifyToken, notificationController.getUserNotifications);
+router.patch('/notifications/read/:id', verifyToken, notificationController.markAsRead);
 
 module.exports = router;

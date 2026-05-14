@@ -19,7 +19,8 @@ const SalonEmployeeController = {
             if (data && data.length > 0) {
                 res.status(200).send(Utility.formatResponse(200, data));
             } else {
-                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+                // Return success with empty array if not found to avoid breaking multiple API calls on frontend
+                res.status(200).send(Utility.formatResponse(200, []));
             }
         } catch (err) {
             console.error("Error fetching salon employee:", err);

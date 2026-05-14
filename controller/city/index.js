@@ -11,6 +11,7 @@ const cityController = {
     try {
       const payload = { ...req.body, created_by: req.body.id };
       delete payload.userId; // Ensure userId is removed if present
+      delete payload.status; // Ensure status is removed since it's not in DB
 
       const { data, error } = await supabase
         .from('city')
@@ -52,6 +53,8 @@ const cityController = {
     try {
       const payload = { ...req.body };
       delete payload.userId; // Cleanup
+      delete payload.status; // Ensure status is removed since it's not in DB
+      delete payload.id; // Primary key cannot be updated
 
       const { error } = await supabase
         .from('city')

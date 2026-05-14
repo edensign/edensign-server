@@ -141,7 +141,8 @@ const Utility = {
     getValidTable: (tableName) => {
         const allowed = [
             'users', 'salon', 'amenity', 'service', 'salon_employee',
-            'job_seeker', 'product', 'salon_inventory_product', 'digital_offers'
+            'job_seeker', 'product', 'salon_inventory_product', 'digital_offers',
+            'state', 'city'
         ];
         return allowed.includes(tableName) ? tableName : null;
     },
