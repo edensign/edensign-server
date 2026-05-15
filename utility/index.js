@@ -14,13 +14,13 @@ const jwt = require("jsonwebtoken");
 const config = require("../config");
 const supabase = require("../supabase");
 
-const salt   = config.SALT;
+const salt = config.SALT;
 const secret = config.SECRET;
 const bucketName = config.BUCKET;
-const region     = config.REGION;
-const accessKey  = config.ACCESS_KEY;
-const secretKey  = config.SECRET_KEY;
-const sasURL     = config.IMAGE_CONTAINER_SAS_URL;
+const region = config.REGION;
+const accessKey = config.ACCESS_KEY;
+const secretKey = config.SECRET_KEY;
+const sasURL = config.IMAGE_CONTAINER_SAS_URL;
 
 const blobServiceClient = new BlobServiceClient(sasURL);
 
@@ -44,7 +44,7 @@ const Utility = {
      */
     getSignedToken: id => {
         return jwt.sign({ id: id }, secret, {
-            expiresIn: 86400
+            expiresIn: '30d'
         });
     },
     /**
@@ -155,7 +155,7 @@ const Utility = {
     getPagination: (page, size) => {
         let _page = (page !== undefined && !Number.isNaN(page) && page >= 0) ? page : 0;
         let _size = (size !== undefined && !Number.isNaN(size) && size > 0) ? size : 100;
-        let limit  = _size;
+        let limit = _size;
         let offset = _page * _size;
         return { limit, offset };
     },
@@ -209,13 +209,13 @@ const Utility = {
      */
     uploadingImageToAzure: async (folderName, file, formattedName) => {
         try {
-            const containerClient  = blobServiceClient.getContainerClient(folderName);
-            const blobClient       = containerClient.getBlobClient(formattedName);
-            const blockBlobClient  = blobClient.getBlockBlobClient();
+            const containerClient = blobServiceClient.getContainerClient(folderName);
+            const blobClient = containerClient.getBlobClient(formattedName);
+            const blockBlobClient = blobClient.getBlockBlobClient();
             await blockBlobClient.uploadData(file, {
-                blockSize:   4 * 1024 * 1024,
+                blockSize: 4 * 1024 * 1024,
                 concurrency: 20,
-                onProgress:  ev => console.log("Azure Storage Result=>", ev)
+                onProgress: ev => console.log("Azure Storage Result=>", ev)
             });
         } catch (error) {
             throw error;
