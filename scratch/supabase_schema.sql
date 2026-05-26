@@ -662,7 +662,7 @@ RETURNS TABLE(
     skills            text,
     street            text,
     landmark          text,
-    city              integer,
+    city              text,
     result_count      bigint
 )
 LANGUAGE plpgsql
@@ -673,7 +673,7 @@ BEGIN
     SELECT
         js.id, js.name, js.email, js.contact_no, js.age, js.gender,
         js.qualification, js.experience, js.skills,
-        a.street, a.landmark, a.city,
+        a.street, a.landmark, a.city::text,
         COUNT(*) OVER () AS result_count
     FROM job_seeker js
     LEFT JOIN address a ON js.id = a.parent_id AND a.parent = 'job_seeker'
