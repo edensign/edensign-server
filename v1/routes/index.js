@@ -30,6 +30,7 @@ const customerController = require("../../controller/customer");
 const reviewController = require("../../controller/review");
 const cashflowController = require("../../controller/cashflow");
 const authController = require("../../controller/auth");
+const dashboardController = require("../../controller/dashboard");
 const orderController = require("../../controller/order");
 const bannerController = require("../../controller/banner");
 const offerController = require("../../controller/offer");
@@ -85,6 +86,9 @@ router.delete('/delete-country/:id', verifyToken, countryController.removeCountr
 // ------------------------------------Common-----------------------------------------
 router.get('/get-by-pk/:table/:id', commonController.getByPk);
 router.get('/verify-token', verifyToken, (req, res) => res.status(200).send(formatResponse(200, `Verified`)));
+
+//-----------------------------------DASHBOARD-----------------------------------------
+router.get('/get-admin-stats', verifyToken, dashboardController.getAdminStats);
 
 //--------------------------------------IMAGE-----------------------------------------
 router.get('/get-image/:parent/:parent_id', verifyToken, imageController.getImage);

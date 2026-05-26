@@ -171,32 +171,27 @@ const Utility = {
         return data;
     },
 
-    // Upload to Supabase Storage (replaces AWS S3)
+    // Upload to AWS S3
     uploadToS3: async (folder, file, res) => {
         try {
-            const bucketName = config.SUPABASE_BUCKET_NAME;
+            const s3Client = new S3Client({
+                region: region,
+                credentials: {
+                    accessKeyId: accessKey,
+                    secretAccessKey: secretKey
+                }
+            });
 
-            // Upload the file to Supabase Storage
-            const { data, error } = await supabase
-                .storage
-                .from(bucketName)
-                .upload(folder, file.data, {
-                    contentType: file.mimetype,
-                    upsert: true
-                });
+            const command = new PutObjectCommand({
+                Bucket: bucketName,
+                Key: folder,
+                Body: file.data,
+                ContentType: file.mimetype
+            });
 
-            if (error) {
-                console.error("Supabase storage upload error:", error);
-                throw error;
-            }
+            await s3Client.send(command);
 
-            // Get the public URL for the uploaded file
-            const { data: publicUrlData } = supabase
-                .storage
-                .from(bucketName)
-                .getPublicUrl(folder);
-
-            const fileLocation = publicUrlData.publicUrl;
+            const fileLocation = `https://${bucketName}.s3.${region}.amazonaws.com/${folder}`;
             return res.status(200).send(Utility.formatResponse(200, fileLocation));
         } catch (err) {
             console.error("uploadToS3 error:", err);

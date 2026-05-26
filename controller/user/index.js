@@ -21,6 +21,11 @@ const userController = {
                 query = query.in('type', types);
             }
 
+            // Filter salon owners by who created them (sales executive id)
+            if (req.query.created_by) {
+                query = query.eq('created_by', req.query.created_by);
+            }
+
             if (search) {
                 query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,status.ilike.${search}%`);
             }
@@ -88,11 +93,17 @@ const userController = {
                 .from('users')
                 .select('*')
                 .eq('email', req.body.email)
-                .eq('status', 'active')
                 .single();
 
-            if (error || !data) {
+            // PGRST116 = no rows found — treat as "does not exist"
+            if (error && error.code !== 'PGRST116') throw error;
+
+            if (!data) {
                 return res.status(200).send(Utility.formatResponse(200, 'User does not exist'));
+            }
+
+            if (data.status !== 'active') {
+                return res.status(200).send(Utility.formatResponse(200, 'Account is inactive. Please contact support.'));
             }
 
             const isMatch = await Utility.comparePassword(req.body.password, data.password);

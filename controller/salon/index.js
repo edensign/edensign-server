@@ -47,8 +47,22 @@ const salonController = {
     /** Creating salon in the database */
     createSalon: async (req, res) => {
         try {
-            const payload = { ...req.body, created_by: req.body.userId };
+            const salonOwnerId = req.body.userId;
+            const payload = { ...req.body, created_by: salonOwnerId };
             delete payload.userId;
+
+            // Auto-set referral_by: look up who created this salon owner (i.e. the sales executive)
+            if (!payload.referral_by) {
+                const { data: ownerUser } = await supabase
+                    .from('users')
+                    .select('created_by')
+                    .eq('id', salonOwnerId)
+                    .single();
+
+                if (ownerUser && ownerUser.created_by) {
+                    payload.referral_by = ownerUser.created_by;
+                }
+            }
 
             const { data, error } = await supabase
                 .from('salon')
