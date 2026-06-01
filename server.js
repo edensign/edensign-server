@@ -6,6 +6,8 @@
  * restrictions set forth in your license agreement with Eden Sign.
  */
 
+require("net").setDefaultAutoSelectFamily(false);
+
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require('express');

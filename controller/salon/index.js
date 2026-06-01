@@ -135,7 +135,35 @@ const salonController = {
             });
 
             if (data && data.length > 0) {
-                res.status(200).send(Utility.formatResponse(200, data));
+                // Fetch front images for all salons in one query
+                const salonIds = data.map(s => s.id);
+                const { data: frontImages } = await supabase
+                    .from('images')
+                    .select('parent_id, image_src')
+                    .eq('parent', 'salon')
+                    .eq('type', 'front')
+                    .in('parent_id', salonIds)
+                    .order('created_at', { ascending: true });
+
+                // Build lookup: salonId -> first front image_src
+                const frontImageMap = {};
+                if (frontImages) {
+                    frontImages.forEach(img => {
+                        if (!frontImageMap[img.parent_id]) {
+                            frontImageMap[img.parent_id] = img.image_src;
+                        }
+                    });
+                }
+
+                const S3_BASE = 'https://salon-s3.s3.us-east-1.amazonaws.com';
+                const enriched = data.map(salon => ({
+                    ...salon,
+                    front_image: frontImageMap[salon.id]
+                        ? `${S3_BASE}/eden-sign/salon/front/${frontImageMap[salon.id]}`
+                        : salon.banner_image  // fallback to old banner
+                }));
+
+                res.status(200).send(Utility.formatResponse(200, enriched));
             } else {
                 res.status(404).send(Utility.formatResponse(404, `No Data Found`));
             }
@@ -145,27 +173,37 @@ const salonController = {
         }
     },
 
-    /** Get the salons, their associated addresses & their images (uses RPC) */
+    /** Get the salons, their associated addresses & their images */
     getSalonDetail: async (req, res) => {
         try {
-            const salonCode = req.body.code;
-            const data = await Utility.executeRpc('get_salon_detail', { p_salon_code: salonCode });
+            const salonCode = req.body.code || req.params.id;
 
-            if (data && data.length > 0) {
-                const salonDetail = { salon: {}, images: [] };
-                data.forEach(row => {
-                    if (Object.keys(salonDetail.salon).length === 0) {
-                        salonDetail.salon = { ...row };
-                        delete salonDetail.salon.image_src;
-                    }
-                    if (row.image_src) {
-                        salonDetail.images.push(row.image_src);
-                    }
-                });
-                res.status(200).send(Utility.formatResponse(200, salonDetail));
-            } else {
-                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
+            // Get salon + address via RPC
+            const rpcData = await Utility.executeRpc('get_salon_detail', { p_salon_code: salonCode });
+
+            if (!rpcData || rpcData.length === 0) {
+                return res.status(404).send(Utility.formatResponse(404, `No Data Found`));
             }
+
+            // Build salon object from first row (RPC returns one row per image due to JOIN)
+            const salonDetail = { salon: {}, images: [] };
+            const salonRow = rpcData[0];
+            salonDetail.salon = { ...salonRow };
+            delete salonDetail.salon.image_src;
+
+            // Fetch ALL images with their type separately from supabase
+            const { data: imagesData, error: imgError } = await supabase
+                .from('images')
+                .select('id, type, image_src, priority')
+                .eq('parent', 'salon')
+                .eq('parent_id', salonRow.id)
+                .order('priority', { ascending: false });
+
+            if (!imgError && imagesData) {
+                salonDetail.images = imagesData; // Full objects: [{type, image_src}, ...]
+            }
+
+            res.status(200).send(Utility.formatResponse(200, salonDetail));
         } catch (err) {
             console.error("getSalonDetail error:", err);
             res.status(500).send(Utility.formatResponse(500, err.message));
