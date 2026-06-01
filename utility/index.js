@@ -174,16 +174,17 @@ const Utility = {
     // Upload to AWS S3
     uploadToS3: async (folder, file, res) => {
         try {
+            console.log("Initializing S3 with region:", config.REGION);
             const s3Client = new S3Client({
-                region: region,
+                region: config.REGION,
                 credentials: {
-                    accessKeyId: accessKey,
-                    secretAccessKey: secretKey
+                    accessKeyId: config.ACCESS_KEY,
+                    secretAccessKey: config.SECRET_KEY
                 }
             });
 
             const command = new PutObjectCommand({
-                Bucket: bucketName,
+                Bucket: config.BUCKET,
                 Key: folder,
                 Body: file.data,
                 ContentType: file.mimetype
@@ -191,7 +192,7 @@ const Utility = {
 
             await s3Client.send(command);
 
-            const fileLocation = `https://${bucketName}.s3.${region}.amazonaws.com/${folder}`;
+            const fileLocation = `https://${config.BUCKET}.s3.${config.REGION}.amazonaws.com/${folder}`;
             return res.status(200).send(Utility.formatResponse(200, fileLocation));
         } catch (err) {
             console.error("uploadToS3 error:", err);

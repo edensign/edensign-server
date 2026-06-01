@@ -91,6 +91,26 @@ const ImageController = {
         }
     },
 
+    /** Delete images by parent, parent_id AND type (for targeted per-section deletion) */
+    deleteImageByType: async (req, res) => {
+        try {
+            const { parent, parent_id, type } = req.body;
+
+            const { error } = await supabase
+                .from('images')
+                .delete()
+                .eq('parent', parent)
+                .eq('parent_id', parent_id)
+                .eq('type', type);
+
+            if (error) throw error;
+            res.status(200).send(Utility.formatResponse(200, `Deleted Successfully`));
+        } catch (err) {
+            console.error("deleteImageByType error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
     /** Upload image to abs/s3 */
     uploadImage: (req, res) => {
         try {
