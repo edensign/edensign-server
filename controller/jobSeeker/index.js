@@ -90,12 +90,15 @@ const JobSeekerController = {
             let maxExp = null;
             const skills = req.query.skills || null;
             const search = req.query.search || null;
+            const seekerType = req.query.seeker_type || null;
 
             if (req.query.experience) {
                 const experienceRange = req.query.experience.split(',');
                 minExp = parseInt(experienceRange[0]);
                 maxExp = parseInt(experienceRange[1]);
             }
+
+            console.log("[DEBUG] getJobSeekerDetail params - page:", page, "size:", size, "seeker_type:", seekerType);
 
             // If we have a text search, we don't query by skill IDs in the database RPC,
             // because we will perform dynamic name and skill name text matching in JavaScript.
@@ -107,6 +110,28 @@ const JobSeekerController = {
             });
 
             let filteredData = data || [];
+            console.log("[DEBUG] getJobSeekerDetail fetched rows count:", filteredData.length);
+
+            // Filter by seeker_type in memory
+            if (seekerType && filteredData.length > 0) {
+                const typeLower = seekerType.toLowerCase();
+                console.log("[DEBUG] Filtering by seeker_type:", typeLower);
+                filteredData = filteredData.filter(row => {
+                    const exp = (row.experience || '').trim().toLowerCase();
+                    if (typeLower === 'fresher') {
+                        const isFresher = exp === 'fresher' || exp === '0' || exp === '0 years' || exp === '';
+                        return isFresher;
+                    } else if (typeLower === 'experience' || typeLower === 'experienced') {
+                        const isExp = exp !== '' && exp !== 'fresher' && !exp.startsWith('trainer') && !isNaN(parseFloat(exp));
+                        return isExp;
+                    } else if (typeLower === 'trainer') {
+                        const isTrainer = exp.startsWith('trainer');
+                        return isTrainer;
+                    }
+                    return true;
+                });
+                console.log("[DEBUG] After seeker_type filter rows count:", filteredData.length);
+            }
 
             // 1. If searching, filter by name and skill/service name in JS using a smart multi-word search
             if (search && filteredData.length > 0) {

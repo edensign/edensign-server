@@ -97,6 +97,7 @@ router.post('/upload-image', verifyToken, imageController.uploadImage);
 router.patch('/update-image', verifyToken, imageController.updateImage);
 router.delete('/delete-image', verifyToken, imageController.deleteImage);
 router.delete('/delete-image-by-type', verifyToken, imageController.deleteImageByType);
+router.delete('/delete-s3-file', verifyToken, imageController.deleteS3File);
 
 //------------------------------------JOB_SEEKER---------------------------------------
 router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);  //using mysql JOIN

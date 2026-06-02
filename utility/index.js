@@ -8,7 +8,7 @@
 
 const bcrypt = require("bcryptjs");
 const { BlobServiceClient } = require("@azure/storage-blob");
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const jwt = require("jsonwebtoken");
 
 const config = require("../config");
@@ -197,6 +197,31 @@ const Utility = {
         } catch (err) {
             console.error("uploadToS3 error:", err);
             return res.status(500).send(Utility.formatResponse(500, 'Error occurred while uploading the file'));
+        }
+    },
+
+    // Delete from AWS S3
+    deleteFromS3: async (key) => {
+        try {
+            const s3Client = new S3Client({
+                region: config.REGION,
+                credentials: {
+                    accessKeyId: config.ACCESS_KEY,
+                    secretAccessKey: config.SECRET_KEY
+                }
+            });
+
+            const command = new DeleteObjectCommand({
+                Bucket: config.BUCKET,
+                Key: key
+            });
+
+            await s3Client.send(command);
+            console.log(`Successfully deleted key ${key} from S3`);
+            return true;
+        } catch (err) {
+            console.error("deleteFromS3 error:", err);
+            return false;
         }
     },
 
