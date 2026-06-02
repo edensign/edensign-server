@@ -121,6 +121,25 @@ const ImageController = {
             console.log("uploadImage error", err);
             res.status(500).send(Utility.formatResponse(500, err.message));
         }
+    },
+
+    /** Delete a file from AWS S3 */
+    deleteS3File: async (req, res) => {
+        try {
+            const { key } = req.body;
+            if (!key) {
+                return res.status(400).send(Utility.formatResponse(400, "Key is required"));
+            }
+            const deleted = await Utility.deleteFromS3(key);
+            if (deleted) {
+                res.status(200).send(Utility.formatResponse(200, `Deleted file ${key} from S3 successfully`));
+            } else {
+                res.status(500).send(Utility.formatResponse(500, "Failed to delete file from S3"));
+            }
+        } catch (err) {
+            console.error("deleteS3File error:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
     }
 };
 
