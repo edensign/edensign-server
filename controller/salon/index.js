@@ -124,14 +124,22 @@ const salonController = {
     /** Get all the salons & their associated addresses (uses RPC) */
     getSalonList: async (req, res) => {
         try {
-            const isFeatured = req.query.is_featured ? true : null;
-            const isFranchise = req.query.is_franchise ? true : null;
+            const isFeatured = req.query.is_featured === 'true' ? true : req.query.is_featured === 'false' ? false : null;
+            const isFranchise = req.query.is_franchise === 'true' ? true : req.query.is_franchise === 'false' ? false : null;
             const gender = req.query.gender || null;
+            const cityId = req.query.city_id ? parseInt(req.query.city_id, 10) : null;
+            const minRating = req.query.min_rating ? parseFloat(req.query.min_rating) : null;
+            const latitude = req.query.latitude ? parseFloat(req.query.latitude) : null;
+            const longitude = req.query.longitude ? parseFloat(req.query.longitude) : null;
 
             const data = await Utility.executeRpc('get_salon_list', {
                 p_is_featured: isFeatured,
                 p_is_franchise: isFranchise,
-                p_gender: gender
+                p_gender: gender,
+                p_city_id: cityId,
+                p_min_rating: minRating,
+                p_latitude: latitude,
+                p_longitude: longitude
             });
 
             if (data && data.length > 0) {

@@ -170,6 +170,8 @@ router.patch('/update-user', verifyToken, userController.updateUser);
 //-----------------------------------REVIEW-----------------------------------
 router.post('/create-review', reviewController.createReview);
 router.get('/get-reviews/:salon_id', reviewController.getReviewsBySalon);
+router.post('/create-website-review', reviewController.createWebsiteReview);
+router.get('/get-website-reviews', reviewController.getWebsiteReviews);
 
 
 //-----------------------------------CASHFLOW-----------------------------------

@@ -65,6 +65,16 @@ const JobSeekerModel = sequelize.define(
         resume: {
             type: Sequelize.STRING
         },
+        job_location_preference: {
+            type: Sequelize.ENUM,
+            values: ['his_city', 'specific_city', 'specific_state', 'anywhere']
+        },
+        pref_city_id: {
+            type: Sequelize.INTEGER
+        },
+        pref_state_id: {
+            type: Sequelize.INTEGER
+        },
         created_at: {
             type: 'TIMESTAMP'
         },
