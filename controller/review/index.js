@@ -61,7 +61,7 @@ const ReviewController = {
 
             const { data, count, error } = await supabase
                 .from('review')
-                .select('*', { count: 'exact' })
+                .select('*, customer(username)', { count: 'exact' })
                 .eq('salon_id', salon_id)
                 .order('created_at', { ascending: false });
 
@@ -73,6 +73,66 @@ const ReviewController = {
             }));
         } catch (err) {
             console.error("Error fetching reviews:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Create a new website review */
+    createWebsiteReview: async (req, res) => {
+        try {
+            const {
+                customer_id, ease_of_use, design_aesthetics,
+                speed_performance, booking_process, overall_experience,
+                reason, comments
+            } = req.body;
+
+            const ratings = [ease_of_use, design_aesthetics, speed_performance, booking_process, overall_experience];
+            for (const rating of ratings) {
+                if (rating !== undefined && (rating < 0 || rating > 5)) {
+                    return res.status(400).send(Utility.formatResponse(400, "Rating values must be between 0 and 5"));
+                }
+            }
+
+            const { data, error } = await supabase
+                .from('website_review')
+                .insert({
+                    customer_id: customer_id || null,
+                    ease_of_use: ease_of_use || 0,
+                    design_aesthetics: design_aesthetics || 0,
+                    speed_performance: speed_performance || 0,
+                    booking_process: booking_process || 0,
+                    overall_experience: overall_experience || 0,
+                    reason: reason || null,
+                    comments: comments || null
+                })
+                .select('id')
+                .single();
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, { id: data.id, message: "Website review submitted successfully" }));
+        } catch (err) {
+            console.error("Error creating website review:", err);
+            res.status(500).send(Utility.formatResponse(500, err.message));
+        }
+    },
+
+    /** Get all website experience reviews */
+    getWebsiteReviews: async (req, res) => {
+        try {
+            const { data, count, error } = await supabase
+                .from('website_review')
+                .select('*, customer(username)', { count: 'exact' })
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            res.status(200).send(Utility.formatResponse(200, {
+                rows: data || [],
+                count: count || 0
+            }));
+        } catch (err) {
+            console.error("Error fetching website reviews:", err);
             res.status(500).send(Utility.formatResponse(500, err.message));
         }
     }

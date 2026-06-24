@@ -40,6 +40,9 @@ const academyController = require("../../controller/academy");
 const digitalOfferController = require("../../controller/digitalOffer");
 const walletController = require("../../controller/wallet");
 const notificationController = require("../../controller/notification/notification.controller");
+const categoryController = require("../../controller/category");
+const companyController = require("../../controller/company");
+const distributorController = require("../../controller/distributor");
 
 const router = express.Router();
 
@@ -104,6 +107,23 @@ router.get('/get-job-seekers', verifyToken, JobSeekerController.getAll);  //usin
 router.get('/get-job-seeker-list/:page/:size', verifyToken, JobSeekerController.getJobSeekerDetail);   //using mysql JOIN
 router.post('/create-job-seeker', verifyToken, JobSeekerController.createJobSeeker);
 router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSeeker);
+
+//-----------------------------------CATEGORY-------------------------------------------
+router.get('/get-categories', verifyToken, categoryController.getCategories);
+
+//-----------------------------------COMPANY-------------------------------------------
+router.get('/get-companies', verifyToken, companyController.getCompanies);
+router.post('/create-company', verifyToken, companyController.createCompany);
+router.patch('/update-company', verifyToken, companyController.updateCompany);
+router.get('/company/profile', verifyToken, companyController.getCompanyProfile);
+router.patch('/companies/:id/pricing-offers', verifyToken, companyController.updateCompanyPricingOffers);
+
+//-----------------------------------DISTRIBUTOR-------------------------------------------
+router.get('/get-distributors', verifyToken, distributorController.getDistributors);
+router.post('/create-distributor', verifyToken, distributorController.createDistributor);
+router.patch('/update-distributor', verifyToken, distributorController.updateDistributor);
+router.get('/distributor/profile', verifyToken, distributorController.getDistributorProfile);
+router.get('/company/distributors', verifyToken, distributorController.getCompanyDistributors);
 
 //-----------------------------------PRODUCT-------------------------------------------
 router.get('/get-products', verifyToken, productController.getProducts);
@@ -170,6 +190,8 @@ router.patch('/update-user', verifyToken, userController.updateUser);
 //-----------------------------------REVIEW-----------------------------------
 router.post('/create-review', reviewController.createReview);
 router.get('/get-reviews/:salon_id', reviewController.getReviewsBySalon);
+router.post('/create-website-review', reviewController.createWebsiteReview);
+router.get('/get-website-reviews', reviewController.getWebsiteReviews);
 
 
 //-----------------------------------CASHFLOW-----------------------------------

@@ -57,6 +57,18 @@ const userController = {
         }
 
         try {
+            // Check if email already exists
+            const { data: existingUser, error: checkError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('email', email)
+                .limit(1);
+
+            if (checkError) throw checkError;
+            if (existingUser && existingUser.length > 0) {
+                return res.status(409).send(Utility.formatResponse(409, "Email is already registered. Please use a different email."));
+            }
+
             const hash = await Utility.createHash(password);
             const payload = {
                 ...req.body,
@@ -86,38 +98,44 @@ const userController = {
         }
     },
 
-    /** Login admin/sales_executive user */
     login: async (req, res) => {
         try {
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
-                .eq('email', req.body.email)
-                .single();
+                .eq('email', req.body.email);
 
-            // PGRST116 = no rows found — treat as "does not exist"
-            if (error && error.code !== 'PGRST116') throw error;
+            if (error) throw error;
 
-            if (!data) {
+            if (!data || data.length === 0) {
                 return res.status(200).send(Utility.formatResponse(200, 'User does not exist'));
             }
 
-            if (data.status !== 'active') {
+            // Loop through all accounts with this email to see if password matches
+            let matchedUser = null;
+            for (const user of data) {
+                const isMatch = await Utility.comparePassword(req.body.password, user.password);
+                if (isMatch) {
+                    matchedUser = user;
+                    break;
+                }
+            }
+
+            if (!matchedUser) {
+                return res.status(200).send(Utility.formatResponse(200, 'Username and Password do not match'));
+            }
+
+            if (matchedUser.status !== 'active') {
                 return res.status(200).send(Utility.formatResponse(200, 'Account is inactive. Please contact support.'));
             }
 
-            const isMatch = await Utility.comparePassword(req.body.password, data.password);
-            if (isMatch) {
-                const token = Utility.getSignedToken(data.id);
-                res.status(200).send(Utility.formatResponse(200, {
-                    token,
-                    id:       data.id,
-                    type:     data.type,
-                    username: data.username
-                }));
-            } else {
-                res.status(200).send(Utility.formatResponse(200, 'Username and Password do not match'));
-            }
+            const token = Utility.getSignedToken(matchedUser.id);
+            res.status(200).send(Utility.formatResponse(200, {
+                token,
+                id:       matchedUser.id,
+                type:     matchedUser.type,
+                username: matchedUser.username
+            }));
         } catch (err) {
             console.error('login error:', err);
             res.status(500).send(Utility.formatResponse(500, err.message));

@@ -12,6 +12,15 @@ const productController = {
             const { id } = req.params; // Support for /products/:id
             const { page, size, search } = req.query;
             
+            // Check logged in user type to filter results
+            const { data: userRecord } = await supabase
+                .from('users')
+                .select('type')
+                .eq('id', req.body.userId)
+                .single();
+
+            const userType = userRecord?.type;
+
             let query = supabase
                 .from('product')
                 .select('*, product_image(image_src)', { count: 'exact' });
@@ -20,6 +29,26 @@ const productController = {
                 query = query.eq('id', id).single();
             } else {
                 const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
+                
+                if (userType === 'distributor') {
+                    query = query.eq('created_by', req.body.userId);
+                } else if (userType === 'company') {
+                    const { data: compRec } = await supabase
+                        .from('company')
+                        .select('id')
+                        .eq('user_id', req.body.userId)
+                        .single();
+                    if (compRec) {
+                        query = query.eq('company_id', compRec.id);
+                    }
+                }
+
+                if (req.query.created_by) {
+                    query = query.eq('created_by', req.query.created_by);
+                }
+                if (req.query.company_id) {
+                    query = query.eq('company_id', req.query.company_id);
+                }
                 
                 if (search) {
                     query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%,color.ilike.%${search}%,status.ilike.${search}%`);
@@ -48,8 +77,20 @@ const productController = {
     /** Creating product in the database */
     createProduct: async (req, res) => {
         try {
+            // Check if logged in user is a distributor to auto-link product
+            const { data: distData } = await supabase
+                .from('distributor')
+                .select('id, company_id')
+                .eq('user_id', req.body.userId)
+                .single();
+
             const payload = { ...req.body, created_by: req.body.userId };
             delete payload.userId;
+
+            if (distData) {
+                payload.distributor_id = distData.id;
+                payload.company_id = distData.company_id;
+            }
 
             const { data, error } = await supabase
                 .from('product')
@@ -115,9 +156,31 @@ const productController = {
             const { page, size, search } = req.query;
             const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
 
+            // Check logged in user type to filter results
+            const { data: userRecord } = await supabase
+                .from('users')
+                .select('type')
+                .eq('id', req.body.userId)
+                .single();
+
+            const userType = userRecord?.type;
+
             let query = supabase
                 .from('product')
                 .select('id, name, brand, sku, stock_quantity, low_stock_threshold, status, updated_at', { count: 'exact' });
+
+            if (userType === 'distributor') {
+                query = query.eq('created_by', req.body.userId);
+            } else if (userType === 'company') {
+                const { data: compRec } = await supabase
+                    .from('company')
+                    .select('id')
+                    .eq('user_id', req.body.userId)
+                    .single();
+                if (compRec) {
+                    query = query.eq('company_id', compRec.id);
+                }
+            }
 
             if (search) {
                 query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,brand.ilike.%${search}%`);
