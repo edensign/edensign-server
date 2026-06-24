@@ -142,7 +142,7 @@ const Utility = {
         const allowed = [
             'users', 'salon', 'amenity', 'service', 'salon_employee',
             'job_seeker', 'product', 'salon_inventory_product', 'digital_offers',
-            'state', 'city'
+            'state', 'city', 'category', 'company', 'distributor'
         ];
         return allowed.includes(tableName) ? tableName : null;
     },

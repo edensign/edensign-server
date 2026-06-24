@@ -22,15 +22,56 @@ const productAdController = {
         }
     },
 
-    /** Get paginated list of all product ads (for admin) */
+    /** Get paginated list of all product ads (for admin, company, or distributor) */
     getAll: async (req, res) => {
         try {
             const { page = 0, size = 10, search } = req.query;
             const { limit, offset } = Utility.getPagination(parseInt(page), parseInt(size));
 
+            // Check logged in user type to filter results
+            const { data: userRecord } = await supabase
+                .from('users')
+                .select('type')
+                .eq('id', req.body.userId)
+                .single();
+
+            const userType = userRecord?.type;
+            let productIds = [];
+
+            if (userType === 'distributor') {
+                const { data: prods } = await supabase
+                    .from('product')
+                    .select('id')
+                    .eq('created_by', req.body.userId);
+                productIds = prods ? prods.map(p => p.id) : [];
+                if (productIds.length === 0) {
+                    return res.status(200).send(Utility.formatResponse(200, { count: 0, rows: [] }));
+                }
+            } else if (userType === 'company') {
+                const { data: compRec } = await supabase
+                    .from('company')
+                    .select('id')
+                    .eq('user_id', req.body.userId)
+                    .single();
+                if (compRec) {
+                    const { data: prods } = await supabase
+                        .from('product')
+                        .select('id')
+                        .eq('company_id', compRec.id);
+                    productIds = prods ? prods.map(p => p.id) : [];
+                }
+                if (productIds.length === 0) {
+                    return res.status(200).send(Utility.formatResponse(200, { count: 0, rows: [] }));
+                }
+            }
+
             let query = supabase
                 .from('product_ad')
                 .select('*, product:product_id(id, name, price, discounted_price)', { count: 'exact' });
+
+            if (userType === 'distributor' || userType === 'company') {
+                query = query.in('product_id', productIds);
+            }
 
             if (search) {
                 query = query.or(`title.ilike.%${search}%,status.ilike.${search}%`);
@@ -42,11 +83,7 @@ const productAdController = {
 
             if (error) throw error;
 
-            if (count > 0) {
-                res.status(200).send(Utility.formatResponse(200, { count, rows: data }));
-            } else {
-                res.status(404).send(Utility.formatResponse(404, `No Data Found`));
-            }
+            res.status(200).send(Utility.formatResponse(200, { count: count || 0, rows: data || [] }));
         } catch (err) {
             console.error("productAd getAll error:", err);
             res.status(500).send(Utility.formatResponse(500, err.message));
