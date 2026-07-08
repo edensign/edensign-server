@@ -134,7 +134,7 @@ const productController = {
         try {
             const { data, error } = await supabase
                 .from('product')
-                .select('id, name, brand, price, color, capacity, description, discount_percent, discounted_price, is_home, is_bestseller, status, product_image(image_src)')
+                .select('id, name, brand, price, color, capacity, description, discount_percent, discounted_price, is_home, is_bestseller, status, stock_quantity, product_image(image_src)')
                 .eq('status', 'active'); // Assuming you want only active for the website
 
             if (error) throw error;

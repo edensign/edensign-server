@@ -110,6 +110,9 @@ router.patch('/update-job-seeker', verifyToken, JobSeekerController.updateJobSee
 
 //-----------------------------------CATEGORY-------------------------------------------
 router.get('/get-categories', verifyToken, categoryController.getCategories);
+router.post('/create-category', verifyToken, categoryController.createCategory);
+router.patch('/update-category/:id', verifyToken, categoryController.updateCategory);
+router.delete('/delete-category/:id', verifyToken, categoryController.deleteCategory);
 
 //-----------------------------------COMPANY-------------------------------------------
 router.get('/get-companies', verifyToken, companyController.getCompanies);
