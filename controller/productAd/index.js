@@ -95,6 +95,9 @@ const productAdController = {
         try {
             const payload = { ...req.body, created_by: req.body.userId };
             delete payload.userId;
+            if (payload.id === '' || payload.id === null || payload.id === undefined) {
+                delete payload.id;
+            }
 
             const { data, error } = await supabase
                 .from('product_ad')
