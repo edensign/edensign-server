@@ -164,12 +164,15 @@ const salonController = {
                 }
 
                 const S3_BASE = 'https://salon-s3.s3.us-east-1.amazonaws.com';
-                const enriched = data.map(salon => ({
-                    ...salon,
-                    front_image: frontImageMap[salon.id]
-                        ? `${S3_BASE}/eden-sign/salon/front/${frontImageMap[salon.id]}`
-                        : salon.banner_image  // fallback to old banner
-                }));
+                const enriched = data.map(salon => {
+                    const img = frontImageMap[salon.id];
+                    return {
+                        ...salon,
+                        front_image: img
+                            ? (img.startsWith('http') ? img : `${S3_BASE}/eden-sign/salon/front/${img}`)
+                            : salon.banner_image  // fallback to old banner
+                    };
+                });
 
                 res.status(200).send(Utility.formatResponse(200, enriched));
             } else {
