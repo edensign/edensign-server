@@ -17,18 +17,27 @@ const customerController = {
                 return res.status(400).json(Utility.formatResponse(400, "Username, password, and contact number are required"));
             }
 
-            let query = supabase.from('customer').select('id');
+            let query = supabase.from('customer').select('id, username, contact_no, email');
             if (email) {
-                query = query.or(`contact_no.eq.${contact_no},email.eq.${email}`);
+                query = query.or(`contact_no.eq.${contact_no},email.eq.${email},username.eq.${username}`);
             } else {
-                query = query.eq('contact_no', contact_no);
+                query = query.or(`contact_no.eq.${contact_no},username.eq.${username}`);
             }
 
-            const { data: existingCustomer, error: err1 } = await query;
+            const { data: existingCustomers, error: err1 } = await query;
             if (err1) throw err1;
 
-            if (existingCustomer && existingCustomer.length > 0) {
-                return res.status(409).json(Utility.formatResponse(409, "Customer with this contact number or email already exists"));
+            if (existingCustomers && existingCustomers.length > 0) {
+                const dup = existingCustomers[0];
+                let dupMsg = "Customer with these credentials already exists.";
+                if (dup.username && dup.username.toLowerCase() === username.toLowerCase()) {
+                    dupMsg = "Name is already in use. Please use a different name.";
+                } else if (dup.contact_no === contact_no) {
+                    dupMsg = "Contact number is already registered. Please use a different number.";
+                } else if (email && dup.email && dup.email.toLowerCase() === email.toLowerCase()) {
+                    dupMsg = "Email is already registered. Please use a different email.";
+                }
+                return res.status(409).json(Utility.formatResponse(409, dupMsg));
             }
 
             const hashedPassword = await Utility.createHash(password);
