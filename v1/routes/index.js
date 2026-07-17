@@ -43,6 +43,7 @@ const notificationController = require("../../controller/notification/notificati
 const categoryController = require("../../controller/category");
 const companyController = require("../../controller/company");
 const distributorController = require("../../controller/distributor");
+const systemConfigController = require("../../controller/systemConfig");
 
 const router = express.Router();
 
@@ -285,34 +286,38 @@ router.post('/notifications/token', verifyToken, notificationController.saveFCMT
 router.get('/notifications/list', verifyToken, notificationController.getUserNotifications);
 router.patch('/notifications/read/:id', verifyToken, notificationController.markAsRead);
 
+//-----------------------------------SYSTEM CONFIGURATION-----------------------------
+router.get('/system-config/page-agent', systemConfigController.getPageAgentConfig);
+router.post('/system-config/page-agent', verifyToken, systemConfigController.updatePageAgentConfig);
+
 //-----------------------------------AI AGENT PROXY-----------------------------------
 router.post('/ai-agent/chat/completions', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const apiKey = (authHeader && authHeader.trim() !== '') 
-      ? authHeader.replace('Bearer ', '') 
-      : (require('../../config').VITE_PAGE_AGENT_API_KEY || '');
-
+    const apiKey = require('../../config').VITE_PAGE_AGENT_API_KEY || '';
     if (!apiKey) {
-      return res.status(400).json({ error: 'OpenRouter API Key is not configured on the server or client.' });
+      return res.status(400).json({ error: 'OpenRouter API Key (VITE_PAGE_AGENT_API_KEY) is not configured in the server environment.' });
     }
 
-    console.log("✦ Proxying request to OpenRouter API...");
-    
-    // Inject fallback models array (max 3) for free OpenRouter models to bypass upstream rate limits
     const body = { ...req.body };
-    if (body.model && body.model.endsWith(':free')) {
+    if (!body.model) {
+      body.model = "google/gemma-4-26b-a4b-it:free";
+    }
+
+    const apiURL = 'https://openrouter.ai/api/v1/chat/completions';
+    console.log(`✦ Proxying request to OpenRouter API using model: ${body.model}`);
+
+    // If forwarding to OpenRouter, apply fallback models for free tier to prevent rate limit blocks
+    if (body.model.endsWith(':free')) {
       body.models = [
         body.model,
         "google/gemma-4-26b-a4b-it:free",
         "google/gemma-4-31b-it:free",
         "cohere/north-mini-code:free"
       ];
-      // Remove duplicates and slice to exactly 3 models
       body.models = [...new Set(body.models)].slice(0, 3);
     }
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(apiURL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
