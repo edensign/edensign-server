@@ -60,9 +60,10 @@ router.get('/get-appointments', verifyToken, appointmentController.getAppointmen
 router.get('/customer/appointments', verifyToken, appointmentController.getCustomerAppointments);
 router.get('/get-kanban-slots', verifyToken, appointmentController.getKanbanSlots);
 
-//-----------------------------------CONTACT US-----------------------------------
+//-----------------------------------CONTACT US & LEADS-----------------------------
 router.post('/create-contact', contactUsController.createContact);
 router.get('/get-contacts', verifyToken, contactUsController.getContacts);
+router.patch('/update-contact/:id/status', verifyToken, contactUsController.updateContactStatus);
 
 //-----------------------------------ADDRESS---------------------------------------
 router.get('/get-address/:parent/:parent_id', verifyToken, addressController.getAddress);
@@ -241,6 +242,8 @@ router.get('/products/:id', productController.getProducts); // Can pass id later
 // ORDERS
 router.post('/orders', verifyToken, orderController.createOrder);
 router.get('/orders/my', verifyToken, orderController.getMyOrders);
+router.get('/orders/all', verifyToken, orderController.getAllOrders);
+router.patch('/orders/:id/status', verifyToken, orderController.updateOrderStatus);
 
 // HOME / DISCOVERY
 router.get('/banners', bannerController.getBanners);

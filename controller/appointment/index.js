@@ -297,9 +297,35 @@ const AppointmentController = {
 
             if (error) throw error;
 
+            // Map service IDs to actual Service Names
+            const { data: allServices } = await supabase
+                .from('service')
+                .select('id, name');
+
+            const serviceMap = new Map();
+            if (allServices) {
+                allServices.forEach(s => serviceMap.set(String(s.id), s.name));
+            }
+
+            const formattedAppointments = (data || []).map(appt => {
+                let serviceNames = appt.services;
+                if (appt.services) {
+                    const ids = String(appt.services).split(',').map(s => s.trim());
+                    const names = ids.map(id => serviceMap.get(id)).filter(Boolean);
+                    if (names.length > 0) {
+                        serviceNames = names.join(', ');
+                    }
+                }
+                return {
+                    ...appt,
+                    service_name: serviceNames || appt.services,
+                    services: serviceNames || appt.services
+                };
+            });
+
             res.status(200).send(Utility.formatResponse(200, {
-                rows: data || [],
-                count: data ? data.length : 0
+                rows: formattedAppointments,
+                count: formattedAppointments.length
             }));
         } catch (err) {
             console.error("Error fetching customer appointments:", err);

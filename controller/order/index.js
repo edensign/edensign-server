@@ -121,14 +121,111 @@ const orderController = {
             const customerId = req.userId;
             const { data: orders, error } = await supabase
                 .from('order')
-                .select('*')
-                .eq('customer_id', customerId);
+                .select(`
+                    *,
+                    order_item (
+                        id,
+                        quantity,
+                        price,
+                        product:product_id (
+                            id,
+                            name,
+                            brand
+                        )
+                    )
+                `)
+                .eq('customer_id', customerId)
+                .order('created_at', { ascending: false });
             
-            if (error) throw error;
+            if (error) {
+                const { data: simpleOrders } = await supabase
+                    .from('order')
+                    .select('*')
+                    .eq('customer_id', customerId)
+                    .order('created_at', { ascending: false });
+                return res.status(200).json(Utility.formatResponse(200, { orders: simpleOrders || [] }));
+            }
             
             return res.status(200).json(Utility.formatResponse(200, { orders: orders || [] }));
         } catch (error) {
             console.error("Get orders error:", error);
+            return res.status(500).json(Utility.formatResponse(500, "Internal server error"));
+        }
+    },
+
+    /** Admin: Get all orders from all customers */
+    getAllOrders: async (req, res) => {
+        try {
+            const { page, size, status, search } = req.query;
+            const pageNum = parseInt(page) || 1;
+            const pageSize = parseInt(size) || 20;
+            const offset = (pageNum - 1) * pageSize;
+
+            let query = supabase
+                .from('order')
+                .select(`
+                    *,
+                    customer:customer_id (
+                        id,
+                        username,
+                        email,
+                        contact_no
+                    ),
+                    order_item (
+                        id,
+                        quantity,
+                        price,
+                        product:product_id (
+                            id,
+                            name,
+                            brand
+                        )
+                    )
+                `, { count: 'exact' })
+                .order('created_at', { ascending: false });
+
+            if (status) {
+                query = query.eq('status', status);
+            }
+
+            const { data: orders, count, error } = await query
+                .range(offset, offset + pageSize - 1);
+
+            if (error) throw error;
+
+            return res.status(200).json(Utility.formatResponse(200, {
+                orders: orders || [],
+                count: count || 0
+            }));
+        } catch (error) {
+            console.error("Get all orders error:", error);
+            return res.status(500).json(Utility.formatResponse(500, "Internal server error"));
+        }
+    },
+
+    /** Admin: Update order status */
+    updateOrderStatus: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+
+            const validStatuses = ['payment_pending', 'paid', 'processing', 'dispatched', 'on_the_way', 'delivered', 'cancelled'];
+            if (!status || !validStatuses.includes(status)) {
+                return res.status(400).json(Utility.formatResponse(400, `Invalid status. Must be one of: ${validStatuses.join(', ')}`));
+            }
+
+            const { data: order, error } = await supabase
+                .from('order')
+                .update({ status })
+                .eq('id', id)
+                .select('*')
+                .single();
+
+            if (error) throw error;
+
+            return res.status(200).json(Utility.formatResponse(200, { order, message: `Order status updated to '${status}'` }));
+        } catch (error) {
+            console.error("Update order status error:", error);
             return res.status(500).json(Utility.formatResponse(500, "Internal server error"));
         }
     }
